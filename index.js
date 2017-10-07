@@ -1,7 +1,3 @@
-// ライブラリ
-// moment.js => key : MHMchiX6c1bwSqGM1PZiW_PxhMjh3Sh48
-
-
 var ss = SpreadsheetApp.getActive();
 
 // シートの取得（なければ作成）
@@ -23,15 +19,14 @@ var gantchartSpan = 7;
 
 
 function onOpen() {
-  //フォーマットを揃える
   var firstRow = masterTable.getRange('1:1');
   var firstRowNum = firstRow.getNumColumns();
 
   //セルを固定
-  masterTable.setFrozenRows(1)
+  masterTable.setFrozenRows(2)
 
   //目次をセット
-  var itemsRange = masterTable.getRange(1, 1, 1, itemsLength);
+  var itemsRange = masterTable.getRange(2, 1, 1, itemsLength);
   itemsRange.setValues(items);
 
   //列数を追加
@@ -43,5 +38,41 @@ function onOpen() {
     masterTable.setColumnWidth(i, 25);
   };
 
+  //カスタムメニューをUIに追加
+  SpreadsheetApp.getUi()
+      .createMenu('カスタムメニュー')
+      .addItem('サイドバーの表示', 'showSidebar') //表示名、関数名
+      .addToUi();
+
+  //サイトバーを自動的に表示
+  showSidebar()
 }
+
+//サイドバー関連
+function showSidebar() {
+  var html = HtmlService.createHtmlOutputFromFile('Page')
+      .setTitle('プロジェクトマネジメント')
+      .setWidth(300);
+  SpreadsheetApp.getUi()
+      .showSidebar(html);
+}
+
+function include(filename) {
+  return HtmlService.createHtmlOutputFromFile(filename)
+      .getContent();
+}
+
+
+
+
+function formatGantchart(data) {
+  Logger.log(data.startDate);
+}
+
+
+
+
+
+
+
 

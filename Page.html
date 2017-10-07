@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+</head>
+<body>
+  <form name="setStartDate">
+    <p>プロジェクトの開始日を設定</p>
+    <input name="startDate" type="date" style="width: 130px">
+    <input type="button" value="設定" onclick="send_setStartDate()">
+  </form>
+
+  <script>
+    function send_setStartDate() {
+      var formObj = document.forms.setStartDate;
+      google.script.run.formatGantchart(formObj);
+    }
+
+  </script>
+</body>
+</html>
+
+
