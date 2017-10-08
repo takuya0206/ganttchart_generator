@@ -9,15 +9,26 @@
     <input name="startDate" type="date" style="width: 130px">
     <input type="button" value="設定" onclick="send_setStartDate()">
   </form>
-
+  <div id="msg"></div>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <script>
     function send_setStartDate() {
+      startWait();
       var formObj = document.forms.setStartDate;
-      google.script.run.formatGantchart(formObj);
+      google.script.run.withSuccessHandler(stopWait)
+      .formatGantchart(7, formObj.startDate.value);
     }
+
+    function startWait() {
+      $('#msg').append('<p id="confirm">Please wait...</p>');
+      return;
+    };
+
+    function stopWait() {
+      $('#confirm').remove();
+      return;
+    };
 
   </script>
 </body>
 </html>
-
-
