@@ -9,6 +9,12 @@
     <input name="startDate" type="date" style="width: 130px">
     <input type="button" value="設定" onclick="send_setStartDate()">
   </form>
+  <div>
+  <input type="checkbox" value="showDaysOff">休日を表示する
+  </div>
+
+
+
   <div id="msg"></div>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <script>
@@ -20,13 +26,23 @@
     }
 
     function startWait() {
-      $('#msg').append('<p id="confirm">Please wait...</p>');
-      return;
+     $('#msg').append('<p id="confirm">Please wait...</p>');
+     return;
     };
 
     function stopWait() {
-      $('#confirm').remove();
-      return;
+     $('#confirm').remove();
+     return;
+    };
+
+
+    //↓HTMLでappendできるようにしてsend_setStartDateに入れる。
+    function isMonday(date){
+     var date = new Date (document.forms.setStartDate.startDate.value);
+     if(date.getDay() !== 1) {
+       alert('開始日は月曜日を設定してください。')
+     return;
+     };
     };
 
   </script>

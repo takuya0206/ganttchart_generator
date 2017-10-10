@@ -19,15 +19,19 @@ var firstRowNum = firstRow.getNumColumns();
 
 //フォーマット用アセット
 var items = [
-['No.', 'Tasks', 'Start Date', 'Finish Date', 'Workload', 'Progress']
+  ['No.', 'タスク名', '開始日', '終了日', '工数 （人日）', '進捗'],
+  ['wbs', 'tasks', 'start', 'finish', 'workload', 'progress']
 ];
-var masterTableItemsLength = items[0].length;
+
+var wbsColumnName = 0;
+var wbsCodeName = 1;
+var wbsColumnNameLength = items[0].length;
 
 
 function onOpen() {
   init();
   //WBSの情報がなければガントチャート追加
-  if(!masterTable.getRange('B3').getValue()) {
+  if(!masterTable.getRange('B4').getValue()) {
     var today = Moment.moment().format('YYYY-MM-DD');
     formatGantchart(7, today);
   };
@@ -53,19 +57,21 @@ function showSidebar() {
 //初期フォーマット
 function init(){
   masterTable.setFrozenRows(2)
-  var itemsRange = masterTable.getRange(2, 1, 1, masterTableItemsLength);
-  itemsRange.setValues(items);
+  var wbsColumnRange = masterTable.getRange(2, 1, 2, wbsColumnNameLength);
+  wbsColumnRange.setValues(items);
+  masterTable.hideRows(3)
+
   if (firstRowNum < 30) {
-    masterTable.insertColumns(masterTableItemsLength+1, 200);
+    masterTable.insertColumns(wbsColumnNameLength+1, 200);
   }
 };
 
 //ガントチャートのフォーマット
 function formatGantchart(span, date) {
-  var line_column = masterTableItemsLength+1;
+  var line_column = wbsColumnNameLength+1;
   var date = Moment.moment(date);
   //列幅
-  for (var i = masterTableItemsLength+1; firstRowNum >= i; i++) {
+  for (var i = wbsColumnNameLength+1; firstRowNum >= i; i++) {
     masterTable.setColumnWidth(i, 25);
   };
   //枠線と日付
