@@ -55,7 +55,7 @@ function onEdit(e) {
     var editedColumn = parseInt(range.getColumn());
     var selectedItem = schedule.getRange(2, editedColumn).getValue();
     //該当範囲のセルが編集されたらガントチャートを色ぬり
-    if (selectedItem === 'tasks' || 'planedStart' || 'planedFinish' || 'actualStart' || 'actualFinish') {
+    if (items[1].indexOf(selectedItem, 1) > 0) {
       var lastRow = parseInt(range.getLastRow());
       var lastColumn = parseInt(range.getLastColumn());
       var progressColumn = parseInt(findStartPoint('progress')) - 1;
@@ -67,12 +67,12 @@ function onEdit(e) {
       var baseDate = Moment.moment(schedule.getRange(2, progressColumn+1).getValue());
 
       //フォーマットをリセット
-      schedule.getRange(editedRow, progressColumn+1, lastRow-editedRow+1, ColumnNum).setBackground('');
-        for (var j = progressColumn+1; ColumnNum >= j; j++) {
-          if ((j - progressColumn) % 7 === 0) {
-            schedule.getRange(editedRow, j-1, lastRow, 2).setBackground('#fcefe3');
-          };
+      schedule.getRange(editedRow, progressColumn+1, lastRow-editedRow+1, ColumnNum-progressColumn).setBackground('');
+      for (var j = progressColumn+1; ColumnNum >= j; j++) {
+        if ((j - progressColumn) % 7 === 0) {
+          schedule.getRange(editedRow, j-1, lastRow, 2).setBackground('#fcefe3');
         };
+      };
 
       //複数セルを考慮してfor文
       for (var i = 0; i < lastRow; i++) {
@@ -83,7 +83,7 @@ function onEdit(e) {
 
         //予定終了でオレンジ色のマイルストーン('#FFBB00')
         if (planedFinish.format('YYYY') != 'Invalid date' && planedStart.format('YYYY') == 'Invalid date') {
-        var chartFinish = progressColumn+1 + planedFinish.diff(baseDate, 'days');
+          var chartFinish = progressColumn+1 + planedFinish.diff(baseDate, 'days');
           if (chartFinish >= progressColumn+1 && chartFinish < ColumnNum){
             schedule.getRange(editedRow, chartFinish).setBackground('#FFBB00');
           };
@@ -91,46 +91,45 @@ function onEdit(e) {
 
         //予定開始と予定終了かつ実際がどちらか空白なら青色('#e3f0f9')
         if (planedFinish.format('YYYY') != 'Invalid date' && planedStart.format('YYYY') != 'Invalid date') {
-        var chartStart = progressColumn+1 + planedStart.diff(baseDate, 'days');
-        var duration = planedFinish.diff(planedStart, 'days');
+          var chartStart = progressColumn+1 + planedStart.diff(baseDate, 'days');
+          var duration = planedFinish.diff(planedStart, 'days');
           if (chartStart >= progressColumn+1){
             if (chartStart + duration > ColumnNum) {
               schedule.getRange(editedRow, chartStart, 1, ColumnNum-chartStart+1).setBackground('#e3f0f9');
             } else {
-            schedule.getRange(editedRow, chartStart, 1, duration).setBackground('#e3f0f9');
+              schedule.getRange(editedRow, chartStart, 1, duration).setBackground('#e3f0f9');
             };
           };
         };
 
         //実際開始と実際終了で緑色('#aadca8')
         if (actualFinish.format('YYYY') != 'Invalid date' && actualStart.format('YYYY') != 'Invalid date'){
-        var chartStart = progressColumn+1 + actualStart.diff(baseDate, 'days');
-        var duration = actualFinish.diff(actualStart, 'days');
+          var chartStart = progressColumn+1 + actualStart.diff(baseDate, 'days');
+          var duration = actualFinish.diff(actualStart, 'days');
           if (chartStart >= progressColumn+1){
             if (chartStart + duration > ColumnNum) {
               schedule.getRange(editedRow, chartStart, 1, ColumnNum-chartStart+1).setBackground('#aadca8');
             } else {
-            schedule.getRange(editedRow, chartStart, 1, duration).setBackground('#aadca8');
+              schedule.getRange(editedRow, chartStart, 1, duration).setBackground('#aadca8');
             };
           };
           //予定との重複分
-         if (planedFinish.format('YYYY') != 'Invalid date' && planedStart.format('YYYY') != 'Invalid date'){
+          if (planedFinish.format('YYYY') != 'Invalid date' && planedStart.format('YYYY') != 'Invalid date'){
            var planChartStart = progressColumn+1 + planedStart.diff(baseDate, 'days');
            var planDuration = planedFinish.diff(planedStart, 'days');
-
+           //重複をチェック
            if(planChartStart <= chartStart+duration && planChartStart+planDuration >= chartStart){
              var isBigger = chartStart >= planChartStart ? chartStart : planChartStart;
              var isSmaller = chartStart+duration <= planChartStart+planDuration ? chartStart+duration : planChartStart+planDuration;
-             Logger.log(isBigger + ' | ' +isSmaller);
              schedule.getRange(editedRow, isBigger, 1, isSmaller-isBigger).setBackground('#99c6ca');
            };
          };
-        };
+       };
 
-        var editedRow = editedRow + 1;
-      };
-    };
-  };
+       var editedRow = editedRow + 1;
+     };
+   };
+ };
 };
 
 
