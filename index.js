@@ -1,14 +1,12 @@
 var ss = SpreadsheetApp.getActive();
 
 // シートの取得（なければ作成）
-var masterTable = ss.getSheetByName('masterTable');
-var resource = ss.getSheetByName('resource');
 var schedule = ss.getSheetByName('schedule');
+var resource = ss.getSheetByName('resource');
 var EVM = ss.getSheetByName('EVM');
 var PDM = ss.getSheetByName('PDM');
-if(!masterTable){masterTable = ss.insertSheet('masterTable', 0);}
-if(!resource){resource = ss.insertSheet('resource', 1);}
-if(!schedule){schedule = ss.insertSheet('schedule', 2);}
+if(!schedule){schedule = ss.insertSheet('schedule', 1);}
+if(!resource){resource = ss.insertSheet('resource', 2);}
 if(!EVM){EVM = ss.insertSheet('EVM', 3);}
 if(!PDM){PDM = ss.insertSheet('PDM', 4)}
 
@@ -16,29 +14,30 @@ if(!PDM){PDM = ss.insertSheet('PDM', 4)}
 var firstRow = schedule.getRange('1:1')
 var RowNum = firstRow.getNumColumns();
 
-
 //フォーマット用アセット
 var items = [
-  ['No.', 'タスク名', '予定開始', '予定終了', '予定工数', '実際開始', '実際終了', '実際工数', '担当', '進捗'],
-  ['wbs', 'tasks','planedStart', 'planedFinish', 'planedWorkload', 'actualStart', 'actualFinish', 'actualWorkload', 'responsiblity', 'progress']
+['No.', 'タスク名', '予定開始', '予定終了', '予定工数', '実際開始', '実際終了', '実際工数', '担当', '進捗'],
+['wbs', 'tasks','planedStart', 'planedFinish', 'planedWorkload', 'actualStart', 'actualFinish', 'actualWorkload', 'responsiblity', 'progress']
 ];
 var wbsColumnNameLength = items[0].length;
 
 
+
 function onOpen() {
   //WBSの情報がなければガントチャート追加
-  if(!schedule.getRange('B4').getValue()) {
+  var checkedRange = schedule.getRange(3, 2, 100, 1);
+  if(checkedRange.isBlank()) {
     //月曜スタートになるよう調整
     var today = Moment.moment();
     var tmp = 0;
     while (Math.abs(today.day()) + tmp <= 7) {
      tmp++;
-      };
-     var monday = today.add(tmp, 'days');
+   };
+   var monday = today.add(tmp, 'days');
 
-    init();
-    formatGantchart(7, monday.format('YYYY/MM/DD'));
-  };
+   init();
+   formatGantchart(7, monday.format('YYYY/MM/DD'));
+ };
 
   //カスタムメニューをUIに追加
   SpreadsheetApp.getUi()
@@ -47,6 +46,59 @@ function onOpen() {
       .addToUi();
       showSidebar();
     }
+
+    function onEdit(e) {
+  // スケジュールシートの機能
+  if (e.source.getActiveSheet().getName() == 'schedule') {
+    var range = e.range;
+    var editedRow = parseInt(range.getRow());
+    var editedColumn = parseInt(range.getColumn());
+    var lastRow = parseInt(range.getLastRow());
+    var lastColumn = parseInt(range.getLastColumn());
+    var selectedItem = schedule.getRange(2, editedColumn).getValue();
+
+
+    if (selectedItem === 'tasks' || 'planedStart' || 'planedFinish' || 'actualStart' || 'actualFinish') {
+      var progressColumn = parseInt(findStartPoint('progress')) - 1;
+      var itemKeys = schedule.getRange(2, 1, 1, progressColumn).getValues();
+
+
+      for (var i = 0; i < lastRow; i++) {
+        var planedStart = Moment.moment(schedule.getRange(editedRow, itemKeys[0].indexOf('planedStart')+1).getValue());
+        var planedFinish = Moment.moment(schedule.getRange(editedRow, itemKeys[0].indexOf('planedFinish')+1).getValue());
+        var actualStart = Moment.moment(schedule.getRange(editedRow, itemKeys[0].indexOf('actualStart')+1).getValue());
+        var actualFinish = Moment.moment(schedule.getRange(editedRow, itemKeys[0].indexOf('actualFinish')+1).getValue());
+        var baseDate = Moment.moment(schedule.getRange(2, progressColumn+1).getValue());
+        var chartFinish = progressColumn+1 + planedFinish.diff(baseDate, 'days');
+
+
+        //フォーマットをリセット
+        schedule.getRange(editedRow, progressColumn+1, 1, RowNum).setBackground('');
+        for (var j = progressColumn+1; RowNum >= j; j++) {
+          if ((j - progressColumn) % 7 === 0) {
+            schedule.getRange(editedRow, j-1, 1, 2).setBackground('#fcefe3');
+          };
+        };
+
+        //マイルストーンを置く
+        if (planedFinish.format('YYYY') != 'Invalid date' && planedStart.format('YYYY') == 'Invalid date') {
+          if (chartFinish >= progressColumn+1 && chartFinish < RowNum){
+            schedule.getRange(editedRow, chartFinish).setBackground('#FFBB00');
+          };
+        };
+        var editedRow = editedRow + 1;
+      };
+    };
+
+  };
+};
+
+
+
+
+
+
+
 
 //関数〜
 //サイドバーの表示
@@ -77,12 +129,16 @@ function init(){
 
 //ガントチャートのフォーマット
 function formatGantchart(span, date) {
-  var line_column = wbsColumnNameLength+1;
+  var line_column = findStartPoint('progress');
   var date = Moment.moment(date);
+
+  //日付をconfigに記録
+  schedule.getRange(2, line_column).setValue(date.format('YYYY/MM/DD'));
+
   //列幅
-  for (var i = wbsColumnNameLength+1; RowNum >= i; i++) {
+  for (var i = line_column; RowNum >= i; i++) {
     schedule.setColumnWidth(i, 25);
-    if ((i - wbsColumnNameLength) % 7 === 0) {
+    if ((i - line_column+1) % 7 === 0) {
       schedule.getRange(2, i-1, 1000, 2).setBackground('#fcefe3');
     }
   };
@@ -97,10 +153,14 @@ function formatGantchart(span, date) {
  };
 };
 
-
-
-
-
+function findStartPoint (text) {
+  var ary = schedule.getRange('2:2').getValues();
+  if (ary[0].indexOf(text) < 0) {
+    alert('2列目が変更されています。初期化してください');
+  } else {
+   return ary[0].indexOf('progress') + 2;
+ }
+}
 
 
 
