@@ -47,41 +47,43 @@ function onOpen() {
       showSidebar();
     }
 
-    function onEdit(e) {
+function onEdit(e) {
   // スケジュールシートの機能
   if (e.source.getActiveSheet().getName() == 'schedule') {
     var range = e.range;
     var editedRow = parseInt(range.getRow());
     var editedColumn = parseInt(range.getColumn());
-    var lastRow = parseInt(range.getLastRow());
-    var lastColumn = parseInt(range.getLastColumn());
     var selectedItem = schedule.getRange(2, editedColumn).getValue();
-
-
+    //該当範囲のセルが編集されたら
     if (selectedItem === 'tasks' || 'planedStart' || 'planedFinish' || 'actualStart' || 'actualFinish') {
+      var lastRow = parseInt(range.getLastRow());
+      var lastColumn = parseInt(range.getLastColumn());
       var progressColumn = parseInt(findStartPoint('progress')) - 1;
       var itemKeys = schedule.getRange(2, 1, 1, progressColumn).getValues();
+      var indexOfPlanedStart = itemKeys[0].indexOf('planedStart');
+      var indexOfPlanedFinish = itemKeys[0].indexOf('planedFinish');
+      var indexOfActualStart = itemKeys[0].indexOf('actualStart');
+      var indexOfActualFinish = itemKeys[0].indexOf('actualFinish');
+      var baseDate = Moment.moment(schedule.getRange(2, progressColumn+1).getValue());
 
-
-      for (var i = 0; i < lastRow; i++) {
-        var planedStart = Moment.moment(schedule.getRange(editedRow, itemKeys[0].indexOf('planedStart')+1).getValue());
-        var planedFinish = Moment.moment(schedule.getRange(editedRow, itemKeys[0].indexOf('planedFinish')+1).getValue());
-        var actualStart = Moment.moment(schedule.getRange(editedRow, itemKeys[0].indexOf('actualStart')+1).getValue());
-        var actualFinish = Moment.moment(schedule.getRange(editedRow, itemKeys[0].indexOf('actualFinish')+1).getValue());
-        var baseDate = Moment.moment(schedule.getRange(2, progressColumn+1).getValue());
-        var chartFinish = progressColumn+1 + planedFinish.diff(baseDate, 'days');
-
-
-        //フォーマットをリセット
-        schedule.getRange(editedRow, progressColumn+1, 1, RowNum).setBackground('');
+      //フォーマットをリセット
+      schedule.getRange(editedRow, progressColumn+1, lastRow, RowNum).setBackground('');
         for (var j = progressColumn+1; RowNum >= j; j++) {
           if ((j - progressColumn) % 7 === 0) {
-            schedule.getRange(editedRow, j-1, 1, 2).setBackground('#fcefe3');
+            schedule.getRange(editedRow, j-1, lastRow, 2).setBackground('#fcefe3');
           };
         };
 
+
+      for (var i = 0; i < lastRow; i++) {
+        var planedStart = Moment.moment(schedule.getRange(editedRow, indexOfPlanedStart+1).getValue());
+        var planedFinish = Moment.moment(schedule.getRange(editedRow, indexOfPlanedFinish+1).getValue());
+        var actualStart = Moment.moment(schedule.getRange(editedRow, indexOfActualStart+1).getValue());
+        var actualFinish = Moment.moment(schedule.getRange(editedRow, indexOfActualFinish+1).getValue());
+
         //マイルストーンを置く
         if (planedFinish.format('YYYY') != 'Invalid date' && planedStart.format('YYYY') == 'Invalid date') {
+        var chartFinish = progressColumn+1 + planedFinish.diff(baseDate, 'days');
           if (chartFinish >= progressColumn+1 && chartFinish < RowNum){
             schedule.getRange(editedRow, chartFinish).setBackground('#FFBB00');
           };
@@ -89,7 +91,6 @@ function onOpen() {
         var editedRow = editedRow + 1;
       };
     };
-
   };
 };
 
