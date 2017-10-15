@@ -7,42 +7,40 @@
   <form name="setStartDate">
     <p>プロジェクトの開始日を設定</p>
     <input name="startDate" type="date" style="width: 130px">
-    <input type="button" value="設定" onclick="send_setStartDate()">
+    <input type="button" value="設定" onclick="send_setStartDate();">
   </form>
-  <div>
-  <input type="checkbox" value="showDaysOff">休日を表示する
-  </div>
-
-
 
   <div id="msg"></div>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <script>
     function send_setStartDate() {
-      startWait();
       var formObj = document.forms.setStartDate;
-      google.script.run.withSuccessHandler(stopWait)
+      if (isMonday(formObj.startDate.value) == true) {
+       startWait();
+       google.script.run.withSuccessHandler(removeMsg)
       .formatGantchart(7, formObj.startDate.value);
-    }
+      };
+    };
 
     function startWait() {
      $('#msg').append('<p id="confirm">Please wait...</p>');
      return;
     };
 
-    function stopWait() {
+    function removeMsg() {
      $('#confirm').remove();
      return;
     };
 
-
     //↓HTMLでappendできるようにしてsend_setStartDateに入れる。
     function isMonday(date){
-     var date = new Date (document.forms.setStartDate.startDate.value);
-     if(date.getDay() !== 1) {
-       alert('開始日は月曜日を設定してください。')
-     return;
+     var day = new Date (date);
+     if(day.getDay() !== 1) {
+       $('#msg').append('<p id="confirm">開始日は月曜日を設定してください。</p>')
+       setTimeout(removeMsg, 3000);
+     return false;
      };
+     return true;
     };
 
   </script>
