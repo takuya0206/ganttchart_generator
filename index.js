@@ -17,10 +17,12 @@ var rowNum = schedule.getMaxRows();
 
 
 
+
+
 //フォーマット用アセット
 var items = [
-['No.', 'タスク名', '予定開始', '予定終了', '予定工数', '実際開始', '実際終了', '実際工数', '担当', '進捗'],
-['wbs', 'tasks','planedStart', 'planedFinish', 'planedWorkload', 'actualStart', 'actualFinish', 'actualWorkload', 'responsiblity', 'progress']
+['No.', 'タスク名', '予定開始', '予定終了', '実際開始', '実際終了', '工数（予｜実）','', '担当', '進捗'],
+['wbs', 'tasks','planedStart', 'planedFinish', 'actualStart', 'actualFinish', 'planedWorkload', 'actualWorkload', 'responsiblity', 'progress']
 ];
 var wbsColumnNameLength = items[0].length;
 
@@ -139,7 +141,8 @@ function onOpen() {
         if (progress != 'NaN') {
           var chartStart = baseLine + actualStart.diff(baseDate, 'days');
           var duration = actualFinish.diff(actualStart, 'days')+1;
-          var markLength = Math.round(duration * progress);
+          var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
+
           var progressLine = [];
           progressLine.push([]);
           for (var i = 0; i < markLength; i++) {
@@ -179,6 +182,14 @@ function init(){
   firstRow.setBackground('#f3f3f3');
   var wbsColumnRange = schedule.getRange(1, 1, 2, wbsColumnNameLength);
   wbsColumnRange.setValues(items);
+  schedule.setColumnWidth(items[1].indexOf('planedWorkload')+1, 45);
+  schedule.setColumnWidth(items[1].indexOf('actualWorkload')+1, 45);
+  schedule.getRange(1, items[1].indexOf('planedWorkload')+1, 1, 2).merge();
+  schedule.getRange(1, 1,rowNum, columnNum).setHorizontalAlignment('center');
+  schedule.getRange(3, items[1].indexOf('progress')+1, rowNum, 1).setNumberFormat('0%');
+  schedule.getRange(3, items[1].indexOf('planedStart')+1, rowNum, 2).setNumberFormat('yyyy/mm/dd');
+  schedule.getRange(3, items[1].indexOf('actualStart')+1, rowNum, 2).setNumberFormat('yyyy/mm/dd');
+
 
   // 列の追加
   if (columnNum < 30) {
@@ -197,12 +208,15 @@ function formatGantchart(span, date) {
   schedule.getRange(2, line_column).setValue(date.format('YYYY/MM/DD'));
 
   //列幅と土日の色
-  for (var i = line_column; columnNum >= i; i++) { //ここおかしい
+  for (var i = line_column; columnNum >= i; i++) {
     schedule.setColumnWidth(i, 25);
     if ((i - line_column+1) % 7 === 0) {
       schedule.getRange(2, i-1, rowNum-2, 2).setBackground('#fcefe3');
     }
   };
+
+  //日付は左寄せ
+  schedule.getRange(1, line_column, 1, columnNum-line_column).setHorizontalAlignment('left');
 
   //枠線と日付
   while (columnNum >= line_column){
@@ -215,6 +229,7 @@ function formatGantchart(span, date) {
  };
 };
 
+//開始位置を見つける
 function findStartPoint(text) {
   var ary = schedule.getRange('2:2').getValues();
   if (ary[0].indexOf(text) < 0) {
@@ -225,7 +240,7 @@ function findStartPoint(text) {
 }
 
 
-
+//日付の線を引く
 function drawTodayLine (today) {
  var baseLine = parseInt(findStartPoint('progress'))+1;
  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
