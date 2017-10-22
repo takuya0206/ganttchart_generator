@@ -31,11 +31,9 @@ var wbsColumnNameLength = items[0].length;
 
 
 function onOpen() {
-  //WBSの情報がなければガントチャート追加
   var today = Moment.moment();
-  var checkedRange = schedule.getRange(3, 2, rowNum-3, 1);
   if(firstRow.isBlank()) {
-    //月曜スタートになるよう調整
+    //開始日が月曜スタートになるよう調整
     var tmp = 0;
     while (Math.abs(today.day()) + tmp <= 7) {
      tmp++;
@@ -286,13 +284,16 @@ function checkOverlap(firstStart, firstFinish, secondStart, secondFinish) {
 function markProgress(top, left, baseDate, startDate, finishDate, progress){
   var chartStart = left + startDate.diff(baseDate, 'days');
   var duration = finishDate.diff(startDate, 'days')+1;
-  var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
-  var progressLine = [];
-  progressLine.push([]);
-  for (var g = 0; g < markLength; g++) {
+    if (chartStart >= left){
+    var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
+    var progressLine = [];
+    progressLine.push([]);
+    for (var g = 0; g < markLength; g++) {
     progressLine[0].push("'=");
   };
   schedule.getRange(top, chartStart, 1, markLength).setValues(progressLine);
+
+  }
 };
 
 
