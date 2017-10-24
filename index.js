@@ -43,7 +43,7 @@ function onOpen() {
    init();
    formatGantchart(7, monday.format('YYYY/MM/DD'));
  } else {
-   drawTodayLine(today);
+   drawTodayLine(today); //線を引くのは24時間のクローンでもいいかも
  };
 
   //カスタムメニューをUIに追加
@@ -61,41 +61,53 @@ function onOpen() {
     var editedRow = parseInt(range.getRow());
     var editedColumn = parseInt(range.getColumn());
     var selectedItem = schedule.getRange(2, editedColumn).getValue();
+
     //該当範囲のセルが編集されたらガントチャートを色ぬり
     if (items[1].indexOf(selectedItem, 2) > 0) { //行の項目を追加するときは、検索開始位置を注意
-      var data = findRequiredVariable(range);
-      clearContents(editedRow, data.baseLine, data.lastRow-editedRow+1, columnNum-data.baseLine);      
+      var baseLine = parseInt(findStartPoint('progress'))+1;
+      var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+      var lastColumn = range.getLastColumn();
+      var lastRow = range.getLastRow();
+      var indexOfPlanedStart = items[1].indexOf('planedStart');
+      var indexOfPlanedFinish = items[1].indexOf('planedFinish');
+      var indexOfActualStart = items[1].indexOf('actualStart');
+      var indexOfActualFinish = items[1].indexOf('actualFinish');
+      var indexOfProgress = items[1].indexOf('progress');
+      var datas = schedule.getRange(editedRow, 1, lastRow-editedRow+1, baseLine-1).getValues();
+
+      //フォーマットとコンテンツを削除
+      clearContents(editedRow, baseLine, lastRow-editedRow+1, columnNum-baseLine);
 
       //複数セルを考慮してfor文
-      //対象の値を一気に取得すれば早くできる。要改善
-      var repeatedNum = data.lastRow-editedRow+1
-      for (var i = 0; i < repeatedNum; i++) {
-        var planedStart = Moment.moment(schedule.getRange(editedRow, data.indexOfPlanedStart+1).getValue());
-        var planedFinish = Moment.moment(schedule.getRange(editedRow, data.indexOfPlanedFinish+1).getValue());
-        var actualStart = Moment.moment(schedule.getRange(editedRow, data.indexOfActualStart+1).getValue());
-        var actualFinish = Moment.moment(schedule.getRange(editedRow, data.indexOfActualFinish+1).getValue());
-        var progress = schedule.getRange(editedRow, data.indexOfProgress+1).getValue();
-
+      for (var i = 0, len = datas.length; i < len; i++){
+        var planedStart = Moment.moment(datas[i][indexOfPlanedStart]);
+        var planedFinish = Moment.moment(datas[i][indexOfPlanedFinish]);
+        var actualStart = Moment.moment(datas[i][indexOfActualStart]);
+        var actualFinish = Moment.moment(datas[i][indexOfActualFinish]);
+        var progress = datas[i][indexOfProgress];
+        Logger.log(planedStart.format('YYYY'));
         //予定終了でオレンジ色のマイルストーン('#FFBB00')
-        if (planedFinish.format('YYYY') !== 'Invalid date' && planedStart.format('YYYY') === 'Invalid date') {
-          setMilestone(editedRow, data.baseLine, data.baseDate, planedStart, planedFinish, '#FFBB00');
+        if (planedFinish !== '' && planedStart.format('YYYY') === 'Invalid date') {
+          setMilestone(editedRow, baseLine, baseDate, planedStart, planedFinish, '#FFBB00');
         };
         //予定開始と予定終了で青色('#e3f0f9')
-        if (planedFinish.format('YYYY') !== 'Invalid date' && planedStart.format('YYYY') !== 'Invalid date') {
-          paintChart(editedRow, data.baseLine, data.baseDate, planedStart, planedFinish, '#e3f0f9');
+        if (planedFinish !== '' && planedStart !== '') {
+          paintChart(editedRow, baseLine, baseDate, planedStart, planedFinish, '#e3f0f9');
         };
         //実際開始と実際終了で緑色('#aadca8')
-        if (actualFinish.format('YYYY') !== 'Invalid date' && actualStart.format('YYYY') !== 'Invalid date'){
-          paintChart(editedRow, data.baseLine, data.baseDate, actualStart, actualFinish, '#aadca8');
-          //予定との重複分
+        if (actualFinish !== '' && actualStart !== ''){
+          paintChart(editedRow, baseLine, baseDate, actualStart, actualFinish, '#aadca8');
+        };
+        //重複分があれば濃い緑（'#99c6ca'）
+        if(planedFinish !== '' && planedStart !== '' && actualFinish !== '' && actualStart !== ''){
           var isOverlap = checkOverlap(planedStart, planedFinish, actualStart, actualFinish);
           if (isOverlap !== false) {
-            paintChart(editedRow, data.baseLine, data.baseDate, isOverlap[0], isOverlap[1], '#99c6ca');
+            paintChart(editedRow, baseLine, baseDate, isOverlap[0], isOverlap[1], '#99c6ca');
           };
         };
         //進捗率でマークつける
-        if (progress > 0 && actualFinish.format('YYYY') !== 'Invalid date' && actualStart.format('YYYY') !== 'Invalid date') {
-          markProgress(editedRow, data.baseLine, data.baseDate, actualStart, actualFinish, progress);
+        if (progress > 0 && actualFinish !== '' && actualStart !== '') {
+          markProgress(editedRow, baseLine, baseDate, actualStart, actualFinish, progress);
         };
         editedRow = editedRow + 1;
       };
@@ -146,7 +158,6 @@ function formatGantchart(span, date) {
   var baseDateCell = schedule.getRange(2, line_column);
   var baseDate = Moment.moment(baseDateCell.getValue()).format('YYYY');
   baseDateCell.setValue(date.format('YYYY/MM/DD'));
-
   //初回の場合
   if(baseDate === 'Invalid date') {
     schedule.getRange(1, line_column, 1, columnNum-line_column).setHorizontalAlignment('left');
@@ -155,7 +166,7 @@ function formatGantchart(span, date) {
       schedule.setColumnWidth(i, 25);
       if ((i - line_column+1) % 7 === 0) {
         schedule.getRange(2, i-1, rowNum-2, 2).setBackground('#fcefe3');
-      }
+      };
     };
     //枠線
     var j = line_column;
@@ -165,7 +176,6 @@ function formatGantchart(span, date) {
       j += span;
     };
   };
-
   //初回じゃない場合、既存の情報をグラフに反映
   if(baseDate !== 'Invalid date'){
     rowNum = schedule.getMaxRows();
@@ -221,23 +231,6 @@ function findStartPoint(text) {
  };
 };
 
-//必要な変数を探す
-function findRequiredVariable(range){
-  var obj = {
-    'lastRow' : parseInt(range.getLastRow()),
-    'lastColumn' : parseInt(range.getLastColumn()),
-    'baseLine' : parseInt(findStartPoint('progress'))+1,
-    'itemKeys' : schedule.getRange(2, 1, 1, parseInt(findStartPoint('progress'))).getValues()
-  };
-  obj.indexOfPlanedStart = obj.itemKeys[0].indexOf('planedStart');
-  obj.indexOfPlanedFinish = obj.itemKeys[0].indexOf('planedFinish');
-  obj.indexOfActualStart = obj.itemKeys[0].indexOf('actualStart');
-  obj.indexOfActualFinish = obj.itemKeys[0].indexOf('actualFinish');
-  obj.indexOfProgress = obj.itemKeys[0].indexOf('progress');
-  obj.baseDate = Moment.moment(schedule.getRange(2, obj.baseLine).getValue());
-  return obj;
-};
-
 //フォーマットと値をリセット
 function clearContents(top, left, height, width) {
   schedule.getRange(top, left, height, width).setBackground('').clearContent();
@@ -284,16 +277,15 @@ function checkOverlap(firstStart, firstFinish, secondStart, secondFinish) {
 function markProgress(top, left, baseDate, startDate, finishDate, progress){
   var chartStart = left + startDate.diff(baseDate, 'days');
   var duration = finishDate.diff(startDate, 'days')+1;
-    if (chartStart >= left){
+  if (chartStart >= left){
     var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
     var progressLine = [];
     progressLine.push([]);
     for (var g = 0; g < markLength; g++) {
-    progressLine[0].push("'=");
+      progressLine[0].push("'=");
+    };
+    schedule.getRange(top, chartStart, 1, markLength).setValues(progressLine);
   };
-  schedule.getRange(top, chartStart, 1, markLength).setValues(progressLine);
-
-  }
 };
 
 
