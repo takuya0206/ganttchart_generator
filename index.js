@@ -21,8 +21,8 @@ var rowNum = schedule.getMaxRows();
 
 //フォーマット用アセット
 var items = [
-['No.', 'タスク名', '予定開始', '予定終了', '実際開始', '実際終了', '工数\n（予｜実）','', '担当', '進捗'],
-['wbs', 'tasks','planedStart', 'planedFinish', 'actualStart', 'actualFinish', 'planedWorkload', 'actualWorkload', 'responsiblity', 'progress']
+['No.', '階層別 タスク一覧','','','','', '予定開始', '予定終了', '実際開始', '実際終了', '工数\n（予｜実）','', '担当', '進捗'],
+['wbs', 'lv1','lv2','lv3','lv4','lv5','planedStart', 'planedFinish', 'actualStart', 'actualFinish', 'planedWorkload', 'actualWorkload', 'responsiblity', 'progress']
 ];
 var wbsColumnNameLength = items[0].length;
 
@@ -61,23 +61,21 @@ function onOpen() {
     var editedRow = parseInt(range.getRow());
     var editedColumn = parseInt(range.getColumn());
     var selectedItem = schedule.getRange(2, editedColumn).getValue();
-
     //該当範囲のセルが編集されたらガントチャートを色ぬり
-    if (items[1].indexOf(selectedItem, 2) > 0) { //行の項目を追加するときは、検索開始位置を注意
+    if (items[1].indexOf(selectedItem, 5) > 0) { //行の項目を追加するときは、検索開始位置を注意
       var baseLine = parseInt(findStartPoint('progress'))+1;
       var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
       var lastColumn = range.getLastColumn();
       var lastRow = range.getLastRow();
-      var indexOfPlanedStart = items[1].indexOf('planedStart');
-      var indexOfPlanedFinish = items[1].indexOf('planedFinish');
-      var indexOfActualStart = items[1].indexOf('actualStart');
-      var indexOfActualFinish = items[1].indexOf('actualFinish');
-      var indexOfProgress = items[1].indexOf('progress');
+      var data = schedule.getRange(2, 1, 1, baseLine-1).getValues();
+      var indexOfPlanedStart = data[0].indexOf('planedStart');
+      var indexOfPlanedFinish = data[0].indexOf('planedFinish');
+      var indexOfActualStart = data[0].indexOf('actualStart');
+      var indexOfActualFinish = data[0].indexOf('actualFinish');
+      var indexOfProgress = data[0].indexOf('progress');
       var datas = schedule.getRange(editedRow, 1, lastRow-editedRow+1, baseLine-1).getValues();
-
-      //フォーマットとコンテンツを削除
+      //コンテンツとフォーマットを削除
       clearContents(editedRow, baseLine, lastRow-editedRow+1, columnNum-baseLine);
-
       //複数セルを考慮してfor文
       for (var i = 0, len = datas.length; i < len; i++){
         var planedStart = Moment.moment(datas[i][indexOfPlanedStart]);
@@ -85,7 +83,6 @@ function onOpen() {
         var actualStart = Moment.moment(datas[i][indexOfActualStart]);
         var actualFinish = Moment.moment(datas[i][indexOfActualFinish]);
         var progress = datas[i][indexOfProgress];
-        Logger.log(planedStart.format('YYYY'));
         //予定終了でオレンジ色のマイルストーン('#FFBB00')
         if (planedFinish !== '' && planedStart.format('YYYY') === 'Invalid date') {
           setMilestone(editedRow, baseLine, baseDate, planedStart, planedFinish, '#FFBB00');
@@ -130,21 +127,35 @@ function showSidebar() {
 //初期フォーマット
 function init(){
   var wbsColumnRange = schedule.getRange(1, 1, 2, wbsColumnNameLength);
+  var indexOfPlanedStart = items[1].indexOf('planedStart');
+  var indexOfPlanedFinish = items[1].indexOf('planedFinish');
+  var indexOfActualStart = items[1].indexOf('actualStart');
+  var indexOfActualFinish = items[1].indexOf('actualFinish');
+  var indexOfPlanedWorkload = items[1].indexOf('planedWorkload');
+  var indexOfActualWorkload = items[1].indexOf('actualWorkload');
+  var indexOfProgress = items[1].indexOf('progress');
+  //目次まわり
+  schedule.getRange(1, indexOfPlanedStart+1,　rowNum, columnNum-indexOfPlanedStart+1).setHorizontalAlignment('center');
   wbsColumnRange.setValues(items);
   schedule.setFrozenRows(1);
-  schedule.setFrozenColumns(2);
+  schedule.setFrozenColumns(indexOfPlanedStart);
   schedule.hideRows(2);
-  schedule.setRowHeight(1, 31.5);
+  for(var i = 2; i <= 5; i++){
+   schedule.setColumnWidth(i, 20);
+ }
+  //背景色
   firstRow.setBackground('#f3f3f3');
-  schedule.getRange(1, items[1].indexOf('planedStart')+1, 1, 2).setBackground('#e3f0f9');
-  schedule.getRange(1, items[1].indexOf('actualStart')+1, 1, 2).setBackground('#aadca8');
-  schedule.setColumnWidth(items[1].indexOf('planedWorkload')+1, 45);
-  schedule.setColumnWidth(items[1].indexOf('actualWorkload')+1, 45);
-  schedule.getRange(1, items[1].indexOf('planedWorkload')+1, 1, 2).merge();
-  schedule.getRange(1, 1,rowNum, columnNum).setHorizontalAlignment('center');
-  schedule.getRange(3, items[1].indexOf('progress')+1, rowNum, 1).setNumberFormat('0%');
-  schedule.getRange(3, items[1].indexOf('planedStart')+1, rowNum, 2).setNumberFormat('yyyy/mm/dd');
-  schedule.getRange(3, items[1].indexOf('actualStart')+1, rowNum, 2).setNumberFormat('yyyy/mm/dd');
+  schedule.getRange(1, indexOfPlanedStart+1, 1, 2).setBackground('#e3f0f9');
+  schedule.getRange(1, indexOfActualStart+1, 1, 2).setBackground('#aadca8');
+  //セルの統合
+  schedule.setColumnWidth(indexOfPlanedWorkload+1, 45);
+  schedule.setColumnWidth(indexOfActualWorkload+1, 45);
+  schedule.getRange(1, indexOfPlanedWorkload+1, 1, 2).merge();
+  //文字表示フォーマット
+  schedule.getRange(3, indexOfProgress+1, rowNum, 1).setNumberFormat('0%');
+  schedule.getRange(3, indexOfPlanedStart+1, rowNum, 2).setNumberFormat('yyyy/mm/dd');
+  schedule.getRange(3, indexOfActualStart+1, rowNum, 2).setNumberFormat('yyyy/mm/dd');
+  //列の挿入
   if (columnNum < 30) {
     schedule.insertColumns(wbsColumnNameLength+1, 180);
     columnNum = schedule.getMaxColumns();
@@ -210,7 +221,6 @@ function formatGantchart(span, date) {
       };
     };
   };
-
   //いずれのケースも日付の記入
   var k = line_column;
   while (columnNum >= k){
