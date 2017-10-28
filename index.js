@@ -22,7 +22,7 @@ var rowNum = schedule.getMaxRows();
 //フォーマット用アセット
 var items = [
 ['No.', '階層別 タスク一覧','','','','', '予定開始', '予定終了', '実際開始', '実際終了', '工数\n（予｜実）','', '担当', '進捗'],
-['wbs', 'lv1','lv2','lv3','lv4','lv5','planedStart', 'planedFinish', 'actualStart', 'actualFinish', 'planedWorkload', 'actualWorkload', 'responsiblity', 'progress']
+['wbs', 'lv1','lv2','lv3','lv4','lv5','plannedStart', 'plannedFinish', 'actualStart', 'actualFinish', 'plannedWorkload', 'actualWorkload', 'responsiblity', 'progress']
 ];
 var wbsColumnNameLength = items[0].length;
 
@@ -54,22 +54,24 @@ function onOpen() {
       showSidebar();
     }
 
-    function onEdit(e) {
+
+function onEdit(e) {
   // スケジュールシートの機能
   if (e.source.getActiveSheet().getName() == 'schedule') {
     var range = e.range;
     var editedRow = parseInt(range.getRow());
     var editedColumn = parseInt(range.getColumn());
     var selectedItem = schedule.getRange(2, editedColumn).getValue();
-    //該当範囲のセルが編集されたらガントチャートを色ぬり
-    if (items[1].indexOf(selectedItem, 5) > 0) { //行の項目を追加するときは、検索開始位置を注意
-      var baseLine = parseInt(findStartPoint('progress'))+1;
-      var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+    var indexOfSelectedItem = items[1].indexOf(selectedItem);
+    //plannedStart以降のセルが編集されたらガントチャートを色ぬり
+    if (indexOfSelectedItem > 5) { //行の項目を追加するときは、条件を変える
       var lastColumn = range.getLastColumn();
       var lastRow = range.getLastRow();
+      var baseLine = parseInt(findStartPoint('progress'))+1;
+      var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
       var data = schedule.getRange(2, 1, 1, baseLine-1).getValues();
-      var indexOfPlanedStart = data[0].indexOf('planedStart');
-      var indexOfPlanedFinish = data[0].indexOf('planedFinish');
+      var indexOfplannedStart = data[0].indexOf('plannedStart');
+      var indexOfplannedFinish = data[0].indexOf('plannedFinish');
       var indexOfActualStart = data[0].indexOf('actualStart');
       var indexOfActualFinish = data[0].indexOf('actualFinish');
       var indexOfProgress = data[0].indexOf('progress');
@@ -78,26 +80,26 @@ function onOpen() {
       clearContents(editedRow, baseLine, lastRow-editedRow+1, columnNum-baseLine);
       //複数セルを考慮してfor文
       for (var i = 0, len = datas.length; i < len; i++){
-        var planedStart = Moment.moment(datas[i][indexOfPlanedStart]);
-        var planedFinish = Moment.moment(datas[i][indexOfPlanedFinish]);
+        var plannedStart = Moment.moment(datas[i][indexOfplannedStart]);
+        var plannedFinish = Moment.moment(datas[i][indexOfplannedFinish]);
         var actualStart = Moment.moment(datas[i][indexOfActualStart]);
         var actualFinish = Moment.moment(datas[i][indexOfActualFinish]);
         var progress = datas[i][indexOfProgress];
         //予定終了でオレンジ色のマイルストーン('#FFBB00')
-        if (planedFinish !== '' && planedStart.format('YYYY') === 'Invalid date') {
-          setMilestone(editedRow, baseLine, baseDate, planedStart, planedFinish, '#FFBB00');
+        if (plannedFinish !== '' && plannedStart.format('YYYY') === 'Invalid date') {
+          setMilestone(editedRow, baseLine, baseDate, plannedStart, plannedFinish, '#FFBB00');
         };
         //予定開始と予定終了で青色('#e3f0f9')
-        if (planedFinish !== '' && planedStart !== '') {
-          paintChart(editedRow, baseLine, baseDate, planedStart, planedFinish, '#e3f0f9');
+        if (plannedFinish !== '' && plannedStart !== '') {
+          paintChart(editedRow, baseLine, baseDate, plannedStart, plannedFinish, '#e3f0f9');
         };
         //実際開始と実際終了で緑色('#aadca8')
         if (actualFinish !== '' && actualStart !== ''){
           paintChart(editedRow, baseLine, baseDate, actualStart, actualFinish, '#aadca8');
         };
         //重複分があれば濃い緑（'#99c6ca'）
-        if(planedFinish !== '' && planedStart !== '' && actualFinish !== '' && actualStart !== ''){
-          var isOverlap = checkOverlap(planedStart, planedFinish, actualStart, actualFinish);
+        if(plannedFinish !== '' && plannedStart !== '' && actualFinish !== '' && actualStart !== ''){
+          var isOverlap = checkOverlap(plannedStart, plannedFinish, actualStart, actualFinish);
           if (isOverlap !== false) {
             paintChart(editedRow, baseLine, baseDate, isOverlap[0], isOverlap[1], '#99c6ca');
           };
@@ -109,8 +111,104 @@ function onOpen() {
         editedRow = editedRow + 1;
       };
     };
+
+    //タスク部分のセルが編集されたら...
+    if (indexOfSelectedItem > 0 && indexOfSelectedItem < 6){
+      var taskEndLine = parseInt(findStartPoint('lv5'));
+      var lastRowOfContents = schedule.getLastRow();
+
+      //IDをふる
+      //タスクを消したときはIDを消す
+      if(typeof e.value === 'object'){
+        schedule.getRange(editedRow, 1).clearContent();
+      } else {
+        var range = schedule.getRange(3, 1, lastRowOfContents-3+1, taskEndLine);
+        var data = range.getValues();
+        //一番下の列のとき
+        if(editedRow === lastRowOfContents){
+          value = writeTaskId(editedRow, editedColumn, data);
+          schedule.getRange(editedRow, 1).setValue(value);
+        } //下に列があるときは合わせてIDをふる
+        else {
+          var row = editedRow;
+          for(var i = 0, len = lastRowOfContents-editedRow; i <= len; i++){
+            var editedData = data.slice(0, row-2);
+            var col = 0;
+            label_findCol:
+            for(var j = 1, len2 = editedData[0].length; j < len2; j++){
+              var lastAry = editedData.length-1;
+              if(editedData[lastAry][j] !== ''){
+                col = j+1;
+                var value = writeTaskId(row, col, editedData);
+                data[lastAry][0] = value;
+                break label_findCol;
+              };
+            };
+            row += 1;
+          };
+          range.setValues(data);
+        };
+      };
+
+
+    };
   };
 };
+
+
+
+
+
+//タスクIDを取得する
+function writeTaskId(row, col, data){
+  var broId = 0;
+  var parId = 0;
+  var isBro = false;
+  var isPar = false;
+  var distanceToBro = 0;
+  var distanceToPar = 0;
+  //兄弟タスクがあるかチェック
+  for (var i = data.length-2; i >= 0; i--){
+    if (data[i][col-1] != ''){
+      broId = data[i][0];
+      isBro = true;
+      break;
+    };
+    distanceToBro += 1;
+  };
+ //親タスクがあるかチェック
+ for (var i = data.length-2; i >= 0; i--){
+  if(col === 2){
+    //左端が編集されたら親タスクへの距離を最大値に
+    distanceToPar = Math.pow(2, 53)-1;
+    break;
+  }
+  if(data[i][col-2] != ''){
+    parId = data[i][0];
+    isPar = true;
+    break;
+  };
+  distanceToPar += 1;
+};
+  //兄弟タスクも親タスクもなければ第一番目のタスク
+  if (isBro === false && isPar === false){
+    return '1';
+  };
+  if (distanceToBro < distanceToPar){
+    if(broId.toString().length === 1){
+      return broId + 1;
+    } else {
+      var ary = broId.toString().split('.');
+      ary[ary.length-1] = parseInt(ary[ary.length-1]) + 1;
+      var str = ary.join('.');
+      return str;
+    };
+  };
+  if (distanceToBro > distanceToPar){
+    return parId + '.' + 1;
+  };
+};
+
 
 
 
@@ -127,33 +225,33 @@ function showSidebar() {
 //初期フォーマット
 function init(){
   var wbsColumnRange = schedule.getRange(1, 1, 2, wbsColumnNameLength);
-  var indexOfPlanedStart = items[1].indexOf('planedStart');
-  var indexOfPlanedFinish = items[1].indexOf('planedFinish');
+  var indexOfplannedStart = items[1].indexOf('plannedStart');
+  var indexOfplannedFinish = items[1].indexOf('plannedFinish');
   var indexOfActualStart = items[1].indexOf('actualStart');
   var indexOfActualFinish = items[1].indexOf('actualFinish');
-  var indexOfPlanedWorkload = items[1].indexOf('planedWorkload');
+  var indexOfplannedWorkload = items[1].indexOf('plannedWorkload');
   var indexOfActualWorkload = items[1].indexOf('actualWorkload');
   var indexOfProgress = items[1].indexOf('progress');
   //目次まわり
-  schedule.getRange(1, indexOfPlanedStart+1,　rowNum, columnNum-indexOfPlanedStart+1).setHorizontalAlignment('center');
+  schedule.getRange(1, indexOfplannedStart+1, rowNum, columnNum-indexOfplannedStart+1).setHorizontalAlignment('center');
   wbsColumnRange.setValues(items);
   schedule.setFrozenRows(1);
-  schedule.setFrozenColumns(indexOfPlanedStart);
+  schedule.setFrozenColumns(indexOfplannedStart);
   schedule.hideRows(2);
   for(var i = 2; i <= 5; i++){
    schedule.setColumnWidth(i, 20);
  }
   //背景色
   firstRow.setBackground('#f3f3f3');
-  schedule.getRange(1, indexOfPlanedStart+1, 1, 2).setBackground('#e3f0f9');
+  schedule.getRange(1, indexOfplannedStart+1, 1, 2).setBackground('#e3f0f9');
   schedule.getRange(1, indexOfActualStart+1, 1, 2).setBackground('#aadca8');
   //セルの統合
-  schedule.setColumnWidth(indexOfPlanedWorkload+1, 45);
+  schedule.setColumnWidth(indexOfplannedWorkload+1, 45);
   schedule.setColumnWidth(indexOfActualWorkload+1, 45);
-  schedule.getRange(1, indexOfPlanedWorkload+1, 1, 2).merge();
+  schedule.getRange(1, indexOfplannedWorkload+1, 1, 2).merge();
   //文字表示フォーマット
   schedule.getRange(3, indexOfProgress+1, rowNum, 1).setNumberFormat('0%');
-  schedule.getRange(3, indexOfPlanedStart+1, rowNum, 2).setNumberFormat('yyyy/mm/dd');
+  schedule.getRange(3, indexOfplannedStart+1, rowNum, 2).setNumberFormat('yyyy/mm/dd');
   schedule.getRange(3, indexOfActualStart+1, rowNum, 2).setNumberFormat('yyyy/mm/dd');
   //列の挿入
   if (columnNum < 30) {
@@ -192,32 +290,31 @@ function formatGantchart(span, date) {
     rowNum = schedule.getMaxRows();
     var range = schedule.getRange(2, 1, rowNum, line_column-1);
     var data = schedule.getRange(2, 1, range.getLastRow(), line_column-1).getValues();
-    var indexOfPlanedStart = data[0].indexOf('planedStart');
-    var indexOfPlanedFinish = data[0].indexOf('planedFinish');
+    var indexOfplannedStart = data[0].indexOf('plannedStart');
+    var indexOfplannedFinish = data[0].indexOf('plannedFinish');
     var indexOfActualStart = data[0].indexOf('actualStart');
     var indexOfActualFinish = data[0].indexOf('actualFinish');
     var indexOfProgress = data[0].indexOf('progress');
     clearContents(3, line_column, rowNum-2, columnNum-line_column);
     //ガントチャートの色ぬり
-    var repeatedNum = data.length;
-    for (var i = 1; i < repeatedNum; i++) {
-      if(data[i][indexOfPlanedStart] === '' && data[i][indexOfPlanedFinish] !== ''){
-        setMilestone(i+2, line_column, date, Moment.moment(data[i][indexOfPlanedStart]), Moment.moment(data[i][indexOfPlanedFinish]), '#FFBB00');
+    for (var i = 1, len = data.length; i < len; i++) {
+      if(data[i][indexOfplannedStart] === '' && data[i][indexOfplannedFinish] !== ''){
+        setMilestone(i+2, line_column, date, Moment.moment(data[i][indexOfplannedStart]), Moment.moment(data[i][indexOfplannedFinish]), '#FFBB00');
       };
-      if(data[i][indexOfPlanedStart] !== '' && data[i][indexOfPlanedFinish] !== ''){
-        paintChart(i+2, line_column, date, Moment.moment(data[i][indexOfPlanedStart]), Moment.moment(data[i][indexOfPlanedFinish]), '#e3f0f9');
+      if(data[i][indexOfplannedStart] !== '' && data[i][indexOfplannedFinish] !== ''){
+        paintChart(i+2, line_column, date, Moment.moment(data[i][indexOfplannedStart]), Moment.moment(data[i][indexOfplannedFinish]), '#e3f0f9');
       }
-      if(data[i][indexOfActualStart] !== '' && data[i][indexOfPlanedFinish] !== ''){
+      if(data[i][indexOfActualStart] !== '' && data[i][indexOfplannedFinish] !== ''){
         paintChart(i+2, line_column, date, Moment.moment(data[i][indexOfActualStart]), Moment.moment(data[i][indexOfActualFinish]), '#aadca8');
       }
-      if(data[i][indexOfPlanedStart] !== '' && data[i][indexOfPlanedFinish] !== '' && data[i][indexOfActualStart] !== '' && data[i][indexOfPlanedFinish] !== ''){
-        var isOverlap = checkOverlap(data[i][indexOfPlanedStart], data[i][indexOfPlanedFinish], data[i][indexOfActualStart], data[i][indexOfPlanedFinish]);
+      if(data[i][indexOfplannedStart] !== '' && data[i][indexOfplannedFinish] !== '' && data[i][indexOfActualStart] !== '' && data[i][indexOfplannedFinish] !== ''){
+        var isOverlap = checkOverlap(data[i][indexOfplannedStart], data[i][indexOfplannedFinish], data[i][indexOfActualStart], data[i][indexOfplannedFinish]);
         if (isOverlap !== false) {
           paintChart(i+2, line_column, date, Moment.moment(isOverlap[0]), Moment.moment(isOverlap[1]), '#99c6ca');
         };
       };
-      if (data[i][indexOfProgress] > 0 && data[i][indexOfActualStart] !== '' && data[i][indexOfPlanedFinish] !== '') {
-        markProgress(i+2, line_column, date, Moment.moment(data[i][indexOfActualStart]), Moment.moment(data[i][indexOfPlanedFinish]), data[i][indexOfProgress]);
+      if (data[i][indexOfProgress] > 0 && data[i][indexOfActualStart] !== '' && data[i][indexOfplannedFinish] !== '') {
+        markProgress(i+2, line_column, date, Moment.moment(data[i][indexOfActualStart]), Moment.moment(data[i][indexOfplannedFinish]), data[i][indexOfProgress]);
       };
     };
   };
