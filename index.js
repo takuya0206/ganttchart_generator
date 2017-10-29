@@ -58,15 +58,15 @@ function onOpen() {
 function onEdit(e) {
   // スケジュールシートの機能
   if (e.source.getActiveSheet().getName() == 'schedule') {
-    var range = e.range;
-    var editedRow = parseInt(range.getRow());
-    var editedColumn = parseInt(range.getColumn());
+    var editedRow = parseInt(e.range.getRow());
+    var editedColumn = parseInt(e.range.getColumn());
+    var lastColumn = e.range.getLastColumn();
+    var lastRow = e.range.getLastRow();
     var selectedItem = schedule.getRange(2, editedColumn).getValue();
     var indexOfSelectedItem = items[1].indexOf(selectedItem);
     //plannedStart以降のセルが編集されたらガントチャートを色ぬり
     if (indexOfSelectedItem > 5) { //行の項目を追加するときは、条件を変える
-      var lastColumn = range.getLastColumn();
-      var lastRow = range.getLastRow();
+
       var baseLine = parseInt(findStartPoint('progress'))+1;
       var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
       var data = schedule.getRange(2, 1, 1, baseLine-1).getValues();
@@ -119,38 +119,54 @@ function onEdit(e) {
 
       //IDをふる
       //タスクを消したときはIDを消す
-      if(typeof e.value === 'object'){
-        schedule.getRange(editedRow, 1).clearContent();
-      } else {
-        var range = schedule.getRange(3, 1, lastRowOfContents-3+1, taskEndLine);
-        var data = range.getValues();
-        //一番下の列のとき
-        if(editedRow === lastRowOfContents){
-          value = writeTaskId(editedRow, editedColumn, data);
-          schedule.getRange(editedRow, 1).setValue(value);
-        } //下に列があるときは合わせてIDをふる
-        else {
-          var row = editedRow;
-          for(var i = 0, len = lastRowOfContents-editedRow; i <= len; i++){
-            var editedData = data.slice(0, row-2);
-            var col = 0;
-            label_findCol:
-            for(var j = 1, len2 = editedData[0].length; j < len2; j++){
-              var lastAry = editedData.length-1;
-              if(editedData[lastAry][j] !== ''){
-                col = j+1;
-                var value = writeTaskId(row, col, editedData);
-                data[lastAry][0] = value;
-                break label_findCol;
+      if(e.range.isBlank()){
+        var taskRange = schedule.getRange(editedRow, 2, lastRow-editedRow+1,taskEndLine);
+        var idRange = schedule.getRange(editedRow, 1, lastRow-editedRow+1, 1);
+        if (taskRange.isBlank() === true){
+          idRange.clearContent();
+        } else {
+          var taskData = taskRange.getValues();
+          var idData = idRange.getValues();
+          for (var i = 0, len = taskData.length; i < len; i++){
+            var isBlank = true;
+            for(var j = 0, len2 = taskData[0].length; j < len2; j++){
+              if(taskData[i][j] !== ''){isBlank = false;};
               };
-            };
-            row += 1;
+            if(isBlank){idData[i][0] = '';};
           };
-          range.setValues(data);
+          idRange.setValues(idData);
         };
       };
-
-
+      //編集したときはIDをふる
+      if(!e.range.isBlank() && editedRow === lastRowOfContents) {
+        var range = schedule.getRange(3, 1, lastRowOfContents-3+1, taskEndLine);
+        var data = range.getValues();
+        var value = writeTaskId(editedRow, editedColumn, data);
+        Logger.log('value:' + value);
+        schedule.getRange(editedRow, 1).setValue(value);
+      };
+      //編集列より下に列があれば合わせて再計算
+      if(editedRow !== lastRowOfContents){
+        var range = schedule.getRange(3, 1, lastRowOfContents-3+1, taskEndLine);
+        var data = range.getValues();
+        var row = editedRow;
+        for(var i = 0, len = lastRowOfContents-editedRow; i <= len; i++){
+          var editedData = data.slice(0, row-2);
+          var col = 0;
+          label_findCol:
+          for(var j = 1, len2 = editedData[0].length; j < len2; j++){
+            var lastAry = editedData.length-1;
+            if(editedData[lastAry][j] !== ''){
+              col = j+1;
+              var value = writeTaskId(row, col, editedData);
+              data[lastAry][0] = value;
+              break label_findCol;
+              };
+            };
+          row += 1;
+          };
+        range.setValues(data);
+      };
     };
   };
 };
@@ -161,6 +177,7 @@ function onEdit(e) {
 
 //タスクIDを取得する
 function writeTaskId(row, col, data){
+  Logger.log(data);
   var broId = 0;
   var parId = 0;
   var isBro = false;
@@ -177,23 +194,31 @@ function writeTaskId(row, col, data){
     distanceToBro += 1;
   };
  //親タスクがあるかチェック
+ label_innerFor:
  for (var i = data.length-2; i >= 0; i--){
   if(col === 2){
     //左端が編集されたら親タスクへの距離を最大値に
     distanceToPar = Math.pow(2, 53)-1;
     break;
   }
-  if(data[i][col-2] != ''){
-    parId = data[i][0];
-    isPar = true;
-    break;
+  for(var j = col-2; j > 0; j--){
+    if(data[i][j] != ''){
+      parId = data[i][0];
+      isPar = true;
+      break label_innerFor;
+      };
+    };
+    distanceToPar += 1;
   };
-  distanceToPar += 1;
-};
+  Logger.log('broId:' + broId);
+  Logger.log('parId:' + parId);
+  Logger.log('distanceToBro:' + distanceToBro);
+  Logger.log('distanceToPar:' + distanceToPar);
   //兄弟タスクも親タスクもなければ第一番目のタスク
   if (isBro === false && isPar === false){
     return '1';
   };
+  //判定
   if (distanceToBro < distanceToPar){
     if(broId.toString().length === 1){
       return broId + 1;
