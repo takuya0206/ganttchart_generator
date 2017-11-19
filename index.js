@@ -58,7 +58,7 @@ function onOpen() {
     }
 
 
-    function onEdit(e) {
+function onEdit(e) {
   // スケジュールシートの機能
   if (e.source.getActiveSheet().getName() == 'schedule') {
     var editedRow = parseInt(e.range.getRow());
@@ -80,7 +80,7 @@ function onOpen() {
     var datas = schedule.getRange(editedRow, 1, lastRow-editedRow+1, baseLine-1).getValues();
 
     //plannedStart以降のセルが編集されたらガントチャートを色ぬり
-    if (indexOfSelectedItem > 5) { //行の項目を追加するときは、条件を変える
+    if (selectedItem === 'plannedStart' || selectedItem === 'plannedFinish' || selectedItem === 'actualStart' || selectedItem === 'actualFinish' || selectedItem === 'progress') {
       //コンテンツとフォーマットを削除
       clearContents(editedRow, baseLine, lastRow-editedRow+1, columnNum-baseLine);
       //複数セルを考慮してfor文
@@ -115,17 +115,43 @@ function onOpen() {
         };
         editedRow = editedRow + 1;
       };
-      //工数の編集で親タスクの合計を出す
-      if(selectedItem === 'plannedWorkload'){
-        var lastRowOfContents = schedule.getLastRow();
-        var calculatedRange = schedule.getRange(2, 1, lastRowOfContents-2+1, baseLine-1);
-        var calculatedData = calculatedRange.getValues();
-        var newData = sumAndFontWeight(calculatedData, indexOfPlannedWorkload);
-        calculatedRange.setValues(newData.values);
-        calculatedRange.setFontWeights(newData.fontInfo);
-      };
     };
 
+    //工数（予）が編集されたら...
+    if(selectedItem === 'plannedWorkload'){
+      var val = 0;
+      var lastRowOfContents = schedule.getLastRow();
+      var workloadRange = schedule.getRange(1, indexOfPlannedWorkload+1, lastRowOfContents+1, 1);
+      var workloadData = workloadRange.getValues();
+      var indexData = schedule.getRange(1, 1, lastRowOfContents+1, 1).getValues();
+      if(editedRow == lastRow){
+        sumWorkload(indexData, workloadData, indexOfPlannedWorkload+1,indexData[editedRow-1][0], val);
+      } else {
+        sumAllWorkload(indexData, workloadData, workloadRange);
+      };
+/*
+      //e.valueの差異を算出する
+      if(typeof e.value === 'object'){
+        val = e.oldValue * -1;
+        //入力が数値でないとき
+      } else if (isNaN(parseInt(e.value))) {
+        Browser.msgBox('この列には半角数字をご記入ください');
+        if (!e.oldValue){
+          e.range.setValue(0);
+        } else {
+          e.range.setValue(e.oldValue);
+        };
+        return;
+      } else {
+        if (!e.oldValue){
+          val = e.value
+        } else {
+          val = e.value - e.oldValue
+        };
+      };
+      */
+
+    };
     //タスク部分のセルが編集されたら...
     if (indexOfSelectedItem > 0 && indexOfSelectedItem < 6){
       var taskEndLine = parseInt(findStartPoint('lv5'));
@@ -133,7 +159,7 @@ function onOpen() {
       //IDをふる
       //タスクを消したときはIDを消す
       if(e.range.isBlank()){
-        var taskRange = schedule.getRange(editedRow, 2, lastRow-editedRow+1,taskEndLine);
+        var taskRange = schedule.getRange(editedRow, 2, lastRow-editedRow+1,taskEndLine-2+1);
         var idRange = schedule.getRange(editedRow, 1, lastRow-editedRow+1, 1);
         if (taskRange.isBlank() === true){
           idRange.clearContent();
@@ -179,13 +205,10 @@ function onOpen() {
         };
         range.setValues(data);
       };
-      //親タスクの予定工数の合計とbold
-      var calculatedRange = schedule.getRange(2, 1, lastRowOfContents-2+1, baseLine-1);
-      var calculatedData = calculatedRange.getValues();
-      var newData = sumAndFontWeight(calculatedData, indexOfPlannedWorkload);
-      calculatedRange.setValues(newData.values);
-      calculatedRange.setFontWeights(newData.fontInfo);
-
+      //親タスクのbold
+      var fontWeightRange = schedule.getRange(1, 1, lastRowOfContents+1, baseLine-1);
+      var fontWeightData = fontWeightRange.getValues();
+      makeParentBold(fontWeightData, fontWeightRange);
     };
     //IDのセルが編集されたら修復
     if (indexOfSelectedItem === 0){
@@ -197,67 +220,148 @@ function onOpen() {
 };
 
 
-
-//特定の行の子タスクの合計と親のbold
-function sumAndFontWeight(data, targetIndex){
-  var data = data;
+/*↓ function ↓*/
+//親タスクに編集された工数を追加
+function sumWorkload(indexData, workloadData, targetRow, taskId, val){
+  var taskIdAry = taskId.toString().split('_');
   var parentTasks = [];
-  //fontWeightの二重配列を作る
+
+  //親タスクの抽出してindexを調べる
+  for (var i = 0, len = taskIdAry.length-1; i < len; i++){
+    taskIdAry.pop();
+    var tmp = taskIdAry.join('_');
+    for (var j = 0, len2 = indexData.length; j < len2; j++){
+      if(tmp == indexData[j][0]){
+        parentTasks.push({
+          'No.' : tmp,
+          'index': j
+        });
+        workloadData[j][0] = 0
+      };
+    };
+  };
+  //親タスクへvalを足していく
+  for (var i = 0, len = parentTasks.length; i < len; i++){
+/*
+   //値のみを親タスクへ追加（再計算なし）
+    if(workloadData[parentTasks[i]['index']][0] === ''){
+      workloadData[parentTasks[i]['index']][0] = 0;
+    };
+    var result = [workloadData[parentTasks[i]['index']][0] + parseInt(val)];
+    schedule.getRange(parentTasks[i]['index']+1, targetRow).setValue(result);
+  };
+  */
+    //親タスクに紐づく子タスクを全て再計算
+    var parAry = parentTasks[i]['No.'].split('_');
+    for (var j = parentTasks[i]['index'], len2 = workloadData.length; j < len2; j++){
+      var isChild = true;
+      var judgedAry = indexData[j][0].toString().split('_');
+      //初めの値と長さで一回目の判定
+      if(parAry[0] === judgedAry[0] && parAry.length === judgedAry.length-1){
+        //全値で判定
+        for (var k = 0, len3 = parAry.length; k < len3; k++){
+          if(parAry[k] !== judgedAry[k]){
+            isChild = false;
+            break;
+          };
+        };
+        if(isChild){
+          //ターゲットが空白の場合は0を挿入
+          if(workloadData[parentTasks[i]['index']][0] === ''){
+            workloadData[parentTasks[i]['index']][0] = 0;
+          };
+          workloadData[parentTasks[i]['index']][0] += workloadData[j][0];
+        };
+      };
+    };
+    schedule.getRange(parentTasks[i]['index']+1, targetRow).setValue([workloadData[parentTasks[i]['index']]]);
+  };
+};
+
+
+//特定の行の親タスクを全て合計
+function sumAllWorkload(indexData, workloadData, targetRange){
+  var parentTasks = [];
+  //親タスクの抽出
+  for (var i = 0, len = indexData.length; i < len; i++){
+    var tmp = indexData[i][0].toString() + '_1';
+    for (var j = i, len2 = indexData.length; j < len2; j++){
+     if(indexData[j][0].toString() === tmp){
+       parentTasks.push({
+         'No.': indexData[i][0].toString(),
+         'index': i
+       });
+       workloadData[i][0] = 0;
+       break;
+     };
+   };
+ };
+  //親に紐づく子を判定して合計していく
+  for (var i = parentTasks.length-1; 0 <= i; i--){
+    var parAry = parentTasks[i]['No.'].split('_');
+    for (var j = parentTasks[i]['index'], len = indexData.length; j < len; j++){
+      var isChild = true;
+      var judgedAry = indexData[j][0].toString().split('_');
+        //初めの値と長さで一回目の判定
+        if(parAry[0] === judgedAry[0] && parAry.length === judgedAry.length-1){
+          //全値で判定
+          for (var k = 0, len2 = parAry.length; k < len2; k++){
+            if(parAry[k] !== judgedAry[k]){
+              isChild = false;
+              break;
+            };
+          };
+          if(isChild){
+            //ターゲットが空白の場合は0を挿入
+            if(workloadData[j][0] === ''){
+              workloadData[j][0] = 0;
+            };
+            workloadData[parentTasks[i]['index']][0] +=  parseInt(workloadData[j][0]);
+          };
+        };
+      };
+    };
+    targetRange.setValues(workloadData);
+  };
+
+
+function front_sumAllWorkload(){
+    var colOfPlannedWorkload = findStartPoint('plannedWorkload');
+    var lastRowOfContents = schedule.getLastRow();
+    var workloadRange = schedule.getRange(1, colOfPlannedWorkload, lastRowOfContents+1, 1);
+    var workloadData = workloadRange.getValues();
+    var indexData = schedule.getRange(1, 1, lastRowOfContents+1, 1).getValues();
+    sumAllWorkload(indexData, workloadData, workloadRange);
+  }
+
+
+
+
+//親タスクをbold
+function makeParentBold(data, range){
   var info = [];
+  //fontWeightの二重配列を作る
   for(var i = 0, len = data.length; i < len; i++){
     info.push([]);
     for (j = 0, len2 = data[i].length; j < len2; j++){
       info[i].push('normal');
     };
   };
-  //親タスクの抽出。値を0しfontWeightへ反映
+  //親タスクの抽出。fontWeightへ反映
   for (var i = 0, len = data.length; i < len; i++){
     var tmp = data[i][0].toString() + '_1';
-    for (var j = 0, len2 = data.length; j < len2; j++){
+    for (var j = i, len2 = data.length; j < len2; j++){
      if(data[j][0].toString() === tmp){
-       Logger.log('parentTask:' + data[i][0]);
-       parentTasks.push({
-         'No.': data[i][0].toString(),
-         'index': i
-       });
-       data[i][targetIndex] = 0;
        for(var k = 0, len3 = info[0].length; k < len3; k++){
          info[i].push('bold');
          info[i].shift();
        };
-     }; 
+       break;
+     };
    };
  };
-  //親に紐づく子を判定して合計していく
-  for (var i = parentTasks.length-1; 0 <= i; i--){
-    for (var j = 0, len = data.length; j < len; j++){
-      //_で子タスクかどうか判別
-      if(data[j][0].toString().indexOf('_') > 0){
-        var isChild = true;
-        var parAry = parentTasks[i]['No.'].split('_');
-        var judgedAry = data[j][0].split('_');
-        //全ての要素が一致するか見る
-        for (var k = 0, len2 = parAry.length; k < len2; k++){
-          if(parAry[k] !== judgedAry[k]){
-            isChild = false;
-          };
-        };
-        if(isChild){
-          //孫タスクを排除（長さが2以上違えば孫）
-          if(parAry.length === judgedAry.length-1){
-            //ターゲットが空白の場合は0を挿入
-            if(data[j][targetIndex] === ''){
-              data[j][targetIndex] = 0;
-            };
-            data[parentTasks[i]['index']][targetIndex] = data[parentTasks[i]['index']][targetIndex] + parseInt(data[j][targetIndex]);
-          };
-        };
-      };
-    };
-  };
-  return {values: data, fontInfo: info};
+ range.setFontWeights(info);
 };
-
 
 
 //タスクIDを取得する
@@ -317,9 +421,6 @@ function writeTaskId(row, col, data){
     return parId + '_' + 1;
   };
 };
-
-
-
 
 
 //サイドバーの表示
@@ -509,6 +610,7 @@ function markProgress(top, left, baseDate, startDate, finishDate, progress){
 
 
 //日付の線を引く
+//縦線よりも=を優先するように変更
 function drawTodayLine (today) {
  var baseLine = parseInt(findStartPoint('progress'))+1;
  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
@@ -523,20 +625,19 @@ function drawTodayLine (today) {
  if (markColumn-nextBaseLine > 0) {
    targetColumn.clearContent();
    for (var i = 1; i < lastRowOfContents-1; i++) {
-    if (savedValues[i][0] === '='){
-      schedule.getRange(i+2, markColumn).setValue("'=");
-    };
-  };
-};
+     if (savedValues[i][0] === '='){
+       schedule.getRange(i+2, markColumn).setValue("'=");
+     };
+   };
+ };
  //新しい線を引く
  var verticalLine = [];
  var ary = [];
  for (var i = 0; i < lastRowOfContents+1; i++) {
-  verticalLine.push(ary);
+   verticalLine.push(ary);
+ };
+ verticalLine[0].push('|');
+ if (nextBaseLine < todayLine) {
+   schedule.getRange(2, todayLine, lastRowOfContents-1, 1).setValue(verticalLine);
+ };
 };
-verticalLine[0].push('|');
-if (nextBaseLine < todayLine) {
- schedule.getRange(2, todayLine, lastRowOfContents-1, 1).setValue(verticalLine);
-};
-};
-

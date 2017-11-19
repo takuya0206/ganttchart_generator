@@ -10,10 +10,26 @@
     <input type="button" value="設定" onclick="send_setStartDate();">
   </form>
 
+
+  <form name="reCulWorkload">
+    <p>親タスクの工数（予）を再計算する</p>
+    <input type="button" value="実行" onclick="send_reCulWorkload();">
+  </form>
+
+
+
   <div id="msg"></div>
+
+
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <script>
-    function send_setStartDate() {
+    function send_reCulWorkload(){
+      startWait();
+      google.script.run.withSuccessHandler(removeMsg)
+      .front_sumAllWorkload();
+    }
+
+    function send_setStartDate(){
       var formObj = document.forms.setStartDate;
       if (isMonday(formObj.startDate.value) == true) {
        startWait();
@@ -32,7 +48,7 @@
      return;
     };
 
-    //↓HTMLでappendできるようにしてsend_setStartDateに入れる。
+
     function isMonday(date){
      var day = new Date (date);
      if(day.getDay() !== 1) {
