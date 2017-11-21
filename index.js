@@ -5,22 +5,12 @@ var ss = SpreadsheetApp.getActive();
 
 // シートの取得（なければ作成）
 var schedule = ss.getSheetByName('schedule');
-var resource = ss.getSheetByName('resource');
-var EVM = ss.getSheetByName('EVM');
-var PDM = ss.getSheetByName('PDM');
 if(!schedule){schedule = ss.insertSheet('schedule', 1);}
-if(!resource){resource = ss.insertSheet('resource', 2);}
-if(!EVM){EVM = ss.insertSheet('EVM', 3);}
-if(!PDM){PDM = ss.insertSheet('PDM', 4)}
 
 //スケジュールシート情報取得
 var firstRow = schedule.getRange('1:1');
 var columnNum = schedule.getMaxColumns();
 var rowNum = schedule.getMaxRows();
-
-
-
-
 
 //フォーマット用アセット
 var items = [
@@ -28,8 +18,6 @@ var items = [
 ['wbs', 'lv1','lv2','lv3','lv4','lv5','plannedStart', 'plannedFinish', 'actualStart', 'actualFinish', 'plannedWorkload', 'actualWorkload', 'responsiblity', 'progress']
 ];
 var wbsColumnNameLength = items[0].length;
-
-
 
 
 
@@ -45,8 +33,6 @@ function onOpen() {
 
    init();
    formatGantchart(7, monday.format('YYYY/MM/DD'));
- } else {
-   drawTodayLine(today); //線を引くのは24時間のクローンでもいいかも
  };
 
   //カスタムメニューをUIに追加
@@ -58,7 +44,7 @@ function onOpen() {
     }
 
 
-function onEdit(e) {
+    function onEdit(e) {
   // スケジュールシートの機能
   if (e.source.getActiveSheet().getName() == 'schedule') {
     var editedRow = parseInt(e.range.getRow());
@@ -82,7 +68,7 @@ function onEdit(e) {
     //plannedStart以降のセルが編集されたらガントチャートを色ぬり
     if (selectedItem === 'plannedStart' || selectedItem === 'plannedFinish' || selectedItem === 'actualStart' || selectedItem === 'actualFinish' || selectedItem === 'progress') {
       //コンテンツとフォーマットを削除
-      clearContents(editedRow, baseLine, lastRow-editedRow+1, columnNum-baseLine);
+      clearFormat(editedRow, baseLine, lastRow-editedRow+1, columnNum-baseLine);
       //複数セルを考慮してfor文
       for (var i = 0, len = datas.length; i < len; i++){
         var plannedStart = Moment.moment(datas[i][indexOfPlannedStart]);
@@ -110,7 +96,7 @@ function onEdit(e) {
           };
         };
         //進捗率でマークつける
-        if (progress > 0 && plannedFinish !== '' && plannedStart !== '') {
+        if (progress >= 0 && plannedFinish !== '' && plannedStart !== '') {
           markProgress(editedRow, baseLine, baseDate, plannedStart, plannedFinish, progress);
         };
         editedRow = editedRow + 1;
@@ -206,7 +192,7 @@ function onEdit(e) {
         range.setValues(data);
       };
       //親タスクのbold
-      var fontWeightRange = schedule.getRange(1, 1, lastRowOfContents+1, baseLine-1);
+      var fontWeightRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
       var fontWeightData = fontWeightRange.getValues();
       makeParentBold(fontWeightData, fontWeightRange);
     };
@@ -219,8 +205,19 @@ function onEdit(e) {
   };
 };
 
+//トリガーのセット
+function createTimeDrivenTriggers() {
+  ScriptApp.newTrigger('drawTodayLine')
+  .timeBased()
+  .atHour(0)
+  .everyDays(1)
+  .create();
+}
+set_drawTodayLine();
 
-/*↓ function ↓*/
+
+
+/*↓ functions ↓*/
 //親タスクに編集された工数を追加
 function sumWorkload(indexData, workloadData, targetRow, taskId, val){
   var taskIdAry = taskId.toString().split('_');
@@ -325,7 +322,7 @@ function sumAllWorkload(indexData, workloadData, targetRange){
   };
 
 
-function front_sumAllWorkload(){
+  function front_sumAllWorkload(){
     var colOfPlannedWorkload = findStartPoint('plannedWorkload');
     var lastRowOfContents = schedule.getLastRow();
     var workloadRange = schedule.getRange(1, colOfPlannedWorkload, lastRowOfContents+1, 1);
@@ -333,8 +330,6 @@ function front_sumAllWorkload(){
     var indexData = schedule.getRange(1, 1, lastRowOfContents+1, 1).getValues();
     sumAllWorkload(indexData, workloadData, workloadRange);
   }
-
-
 
 
 //親タスクをbold
@@ -550,10 +545,11 @@ function findStartPoint(text) {
  };
 };
 
-//フォーマットと値をリセット
-function clearContents(top, left, height, width) {
-  schedule.getRange(top, left, height, width).setBackground('').clearContent();
-  for (var j = left; j <= columnNum; j++) {
+//フォーマットをリセット
+//カラーを取得して一週ずつgetRangeを使うのをやめる、|以外の値を削除する
+function clearFormat(top, left, height, width) {
+  schedule.getRange(top, left, height, width).setBackground('');
+  for (var j = left; j < columnNum; j++) {
     if((j-left+1) % 7 === 0) {
       schedule.getRange(top, j-1, height, 2).setBackground('#fcefe3');
     };
@@ -603,41 +599,61 @@ function markProgress(top, left, baseDate, startDate, finishDate, progress){
     for (var g = 0; g < markLength; g++) {
       progressLine[0].push("'=");
     };
+    //clearContent()はclearFomatの調整が終われば削除
+    schedule.getRange(top, chartStart, 1, duration).clearContent();
     schedule.getRange(top, chartStart, 1, markLength).setValues(progressLine);
   };
 };
 
 
-
 //日付の線を引く
-//縦線よりも=を優先するように変更
-function drawTodayLine (today) {
+function drawTodayLine () {
+ var today = Moment.moment();
  var baseLine = parseInt(findStartPoint('progress'))+1;
  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
  var lastRowOfContents = schedule.getLastRow();
  var nextBaseLine = baseLine + 1;
  var todayLine = baseLine + today.diff(baseDate, 'days');
  //古い線を削除
- var markInAry = schedule.getRange(2, nextBaseLine, 1, columnNum-nextBaseLine).getValues();
+ var markInAry = schedule.getRange(2, nextBaseLine, 1, columnNum-nextBaseLine+1).getValues();
  var markColumn = markInAry[0].indexOf('|') + nextBaseLine;
- var targetColumn = schedule.getRange(2, markColumn, lastRowOfContents-1, 1);
- var savedValues = schedule.getRange(2, markColumn, lastRowOfContents-1, 1).getValues();
+ var targetColumn = schedule.getRange(2, markColumn, lastRowOfContents-2+1, 1);
+ var savedValues = targetColumn.getValues();
  if (markColumn-nextBaseLine > 0) {
-   targetColumn.clearContent();
-   for (var i = 1; i < lastRowOfContents-1; i++) {
-     if (savedValues[i][0] === '='){
-       schedule.getRange(i+2, markColumn).setValue("'=");
+   for (var i = 0, len = savedValues.length; i < len; i++) {
+     if (savedValues[i][0] === "="){
+       savedValues[i][0] = "'=";
+     } else {
+       savedValues[i][0] = '';
      };
    };
+   targetColumn.setValues(savedValues);
  };
  //新しい線を引く
- var verticalLine = [];
- var ary = [];
- for (var i = 0; i < lastRowOfContents+1; i++) {
-   verticalLine.push(ary);
- };
- verticalLine[0].push('|');
  if (nextBaseLine < todayLine) {
-   schedule.getRange(2, todayLine, lastRowOfContents-1, 1).setValue(verticalLine);
+   var todayColumn = schedule.getRange(2, todayLine, lastRowOfContents+2-1, 1);
+   var todayValues = todayColumn.getValues();
+   var verticalLine = [];
+   var ary = [];
+   for (var i = 0, len = todayValues.length; i < len; i++){
+     if(todayValues[i][0] === "="){
+       todayValues[i][0] = "'=";
+     } else {
+       todayValues[i][0] = '|';
+     };
+   };
+   todayColumn.setValues(todayValues);
  };
+};
+
+
+//drawTodayLineの重複を許さない形でTriggerをセット
+function set_drawTodayLine(){
+  var triggers = ScriptApp.getUserTriggers(ss);
+  for (var i = 0, len = triggers.length; i < len; i++){
+    if(triggers[i].getHandlerFunction() === 'drawTodayLine'){
+      ScriptApp.deleteTrigger(triggers[i]);
+    };
+  };
+  createTimeDrivenTriggers();
 };
