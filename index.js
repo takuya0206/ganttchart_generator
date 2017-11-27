@@ -116,11 +116,12 @@ function onEdit(e) {
       var lastRowOfContents = schedule.getLastRow();
       var workloadRange = schedule.getRange(1, indexOfPlannedWorkload+1, lastRowOfContents+1, 1);
       var workloadData = workloadRange.getValues();
+      var formulas = workloadRange.getFormulas();
       var indexData = schedule.getRange(1, 1, lastRowOfContents+1, 1).getValues();
       if(editedRow == lastRow){
         sumWorkload(indexData, workloadData, indexOfPlannedWorkload+1,indexData[editedRow-1][0], val);
       } else {
-        sumAllWorkload(indexData, workloadData, workloadRange);
+        sumAllWorkload(indexData, workloadData, formulas, workloadRange);
       };
     };
     //タスク部分のセルが編集されたら...
@@ -495,7 +496,7 @@ function sumWorkload(indexData, workloadData, targetRow, taskId, val){
 
 
 //特定の行の親タスクを全て合計
-function sumAllWorkload(indexData, workloadData, targetRange){
+function sumAllWorkload(indexData, workloadData, formulas, targetRange){
   var parentTasks = [];
   //親タスクの抽出
   for (var i = 0, len = indexData.length; i < len; i++){
@@ -534,6 +535,12 @@ function sumAllWorkload(indexData, workloadData, targetRange){
             workloadData[parentTasks[i]['index']][0] +=  parseInt(workloadData[j][0]);
           };
         };
+      };
+    };
+    //関数をworkloadDataに反映
+    for(var i = 0, len = formulas.length; i < len; i++){
+      if(formulas[i][0] !== ''){
+        workloadData[i][0] = formulas[i][0];
       };
     };
     targetRange.setValues(workloadData);
@@ -629,6 +636,19 @@ function writeTaskId(row, col, data){
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 //祝日のセット
 function setHolidays(data){
   var range = holiday.getRange(1, 1,data.length, data[0].length);
@@ -673,16 +693,19 @@ SpreadsheetApp.getUi()
   .addToUi();
 
 
-  /*↓ クライアント用functions ↓*/
 
-  function front_sumAllWorkload(){
-    var colOfPlannedWorkload = findStartPoint('plannedWorkload');
-    var lastRowOfContents = schedule.getLastRow();
-    var workloadRange = schedule.getRange(1, colOfPlannedWorkload, lastRowOfContents, 1);
-    var workloadData = workloadRange.getValues();
-    var indexData = schedule.getRange(1, 1, lastRowOfContents, 1).getValues();
-    sumAllWorkload(indexData, workloadData, workloadRange);
-  }
+
+/*↓ クライアント用functions ↓*/
+
+function front_sumAllWorkload(){
+  var colOfPlannedWorkload = findStartPoint('plannedWorkload');
+  var lastRowOfContents = schedule.getLastRow();
+  var workloadRange = schedule.getRange(1, colOfPlannedWorkload, lastRowOfContents, 1);
+  var workloadData = workloadRange.getValues();
+  var formulas = workloadRange.getFormulas();
+  var indexData = schedule.getRange(1, 1, lastRowOfContents, 1).getValues();
+  sumAllWorkload(indexData, workloadData, formulas, workloadRange);
+}
 
 
 
