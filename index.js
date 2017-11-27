@@ -39,7 +39,7 @@ function onOpen() {
    var monday = today.add(tmp, 'days');
 
    setHolidays(data);
-   holiday.getRange(1,1).setNote('手動で祝日を編集するときは、必ずA列だけ追加をするようにしてください。ガンチャートの反映には「プロジェクトの開始日の設定」を行ってください');
+   holiday.getRange(1,1).setNote('手動で祝日を編集するときは、必ずA列だけに追加をするようにしてください。ガンチャートの反映には「プロジェクトの開始日の設定」を行ってください。');
    init();
    formatGantchart(7, monday.format('YYYY/MM/DD'));
  };
@@ -184,6 +184,7 @@ function onEdit(e) {
     };
 
     //IDのセルが編集されたら修復
+    //promptでtrue/falseをとって、trueのときだけoldvalueに戻すようにする
     if (indexOfSelectedItem === 0){
       if(e.oldValue){
         e.range.setValue(e.oldValue);
@@ -288,15 +289,15 @@ function formatGantchart(span, date) {
   };
 
   //日付の記入
-  var culDate = date;
+  var calDate = date;
   var chartRange = schedule.getRange(1, baseLine, 1, columnNum-baseLine+1);
   var chartData = chartRange.getValues();
   chartRange.setHorizontalAlignment('left');
-  chartData[0][0] = '(' + culDate.format('YYYY/MM/DD') + ')';
+  chartData[0][0] = '(' + calDate.format('YYYY/MM/DD') + ')';
   for (var i = 1, len = chartData[0].length; i < len; i++){
     if(i % 7 === 0){
-      culDate = culDate.add(span, 'days');
-      chartData[0][i] = '(' + culDate.format('YYYY/MM/DD') + ')';
+      calDate = calDate.add(span, 'days');
+      chartData[0][i] = '(' + calDate.format('YYYY/MM/DD') + ')';
     };
   };
   chartRange.setValues(chartData);
@@ -378,7 +379,7 @@ function repaintChart(baseLine, date){
   var indexOfActualStart = data[0].indexOf('actualStart');
   var indexOfActualFinish = data[0].indexOf('actualFinish');
   var indexOfProgress = data[0].indexOf('progress');
-
+  
   copyDefultRow(3, baseLine, rowNum-3+1, columnNum-baseLine+1);
   drawTodayLine ();
   for (var i = 1, len = data.length; i < len; i++) {
@@ -539,14 +540,7 @@ function sumAllWorkload(indexData, workloadData, targetRange){
   };
 
 
-  function front_sumAllWorkload(){
-    var colOfPlannedWorkload = findStartPoint('plannedWorkload');
-    var lastRowOfContents = schedule.getLastRow();
-    var workloadRange = schedule.getRange(1, colOfPlannedWorkload, lastRowOfContents+1, 1);
-    var workloadData = workloadRange.getValues();
-    var indexData = schedule.getRange(1, 1, lastRowOfContents+1, 1).getValues();
-    sumAllWorkload(indexData, workloadData, workloadRange);
-  }
+
 
 
 //親タスクをbold
@@ -677,6 +671,20 @@ SpreadsheetApp.getUi()
 .createMenu('カスタムメニュー')
   .addItem('サイドバーの表示', 'showSidebar') //表示名、関数名
   .addToUi();
+
+
+  /*↓ クライアント用functions ↓*/
+
+  function front_sumAllWorkload(){
+    var colOfPlannedWorkload = findStartPoint('plannedWorkload');
+    var lastRowOfContents = schedule.getLastRow();
+    var workloadRange = schedule.getRange(1, colOfPlannedWorkload, lastRowOfContents, 1);
+    var workloadData = workloadRange.getValues();
+    var indexData = schedule.getRange(1, 1, lastRowOfContents, 1).getValues();
+    sumAllWorkload(indexData, workloadData, workloadRange);
+  }
+
+
 
 
 /*

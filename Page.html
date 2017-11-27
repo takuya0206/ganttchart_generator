@@ -2,63 +2,127 @@
 <html>
 <head>
   <base target="_top">
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+  <style>
+  .container {
+    padding: 0px 10px 10px;
+  }
+  .navi{
+    overflow: hidden;
+    margin: 8px 0px;
+
+  }
+  .navi li{
+   margin-right: 5px;
+   list-style: none; 
+   float: right;
+ }
+ .navi a{
+  padding: 0px 3px;
+  display: block;
+  text-align: center;
+}
+
+
+</style>
 </head>
 <body>
-  <form name="setStartDate">
-    <p>プロジェクトの開始日を設定</p>
-    <input name="startDate" type="date" style="width: 130px">
-    <input type="button" value="設定" onclick="send_setStartDate();">
-  </form>
+  <ul class="navi">
+    <li><a href="#">寄付</a></li>
+    <li><a href="#">問い合せ</a></li>
+    <li><a href="#">使い方</a></li>
+  </ul>
+  <hr width="95%">
+  <div class="container">
+    <h3>ガントチャートの操作</h3>
+    <div class="block form-group">
+      <label>ガントチャート開始日を変更</label>
+      <form name="setStartDate">
+        <input name="startDate" type="date" style="width: 130px">
+        <input type="button" value="設定" onclick="send_setStartDate();">
+      </form>
+    </div>
+
+    <div class="block form-group">
+      <label>データの再計算</label>
+      <form name="recalculate">
+        <select>
+          <option>工数（予）</option>
+          <option>進捗</option>
+        </select>
+        <input type="button" class="action" value="実行" onclick="">
+      </form>
+    </div>
+
+    <div class="block form-group">
+      <label>プログラムの再実行</label>
+      <form name="redo">
+        <select>
+          <option>No.の割り当て</option>
+          <option>ガントチャート色塗り</option>
+          <option>日付線の反映</option>
+        </select>
+        <input type="button" class="action" value="実行" onclick="">
+      </form>
+    </div>
 
 
-  <form name="reCulWorkload">
-    <p>親タスクの工数（予）を再計算する</p>
-    <input type="button" value="実行" onclick="send_reCulWorkload();">
-  </form>
 
+  </div>
+  <hr width="95%">
+  <div class="container">
+    <div id="msg"></div>
+  </div>
 
-
-  <div id="msg"></div>
 
 
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
   <script>
-    function send_reCulWorkload(){
+    function send_recalWorkload(){
       startWait();
       google.script.run.withSuccessHandler(removeMsg)
+      .withFailureHandler(errorMsg)
       .front_sumAllWorkload();
     }
+
 
     function send_setStartDate(){
       var formObj = document.forms.setStartDate;
       if (isMonday(formObj.startDate.value) == true) {
        startWait();
-       google.script.run.withSuccessHandler(removeMsg)
-      .formatGantchart(7, formObj.startDate.value);
-      };
-    };
-
-    function startWait() {
-     $('#msg').append('<p id="confirm">Please wait...</p>');
-     return;
-    };
-
-    function removeMsg() {
-     $('#confirm').remove();
-     return;
-    };
-
-
-    function isMonday(date){
-     var day = new Date (date);
-     if(day.getDay() !== 1) {
-       $('#msg').append('<p id="confirm">開始日は月曜日を設定してください。</p>')
-       setTimeout(removeMsg, 3000);
-     return false;
+       google.script.run
+       .withSuccessHandler(removeMsg)
+       .withFailureHandler(errorMsg)
+       .formatGantchart(7, formObj.startDate.value);
      };
-     return true;
-    };
+   };
 
-  </script>
+   function startWait(){
+    $('#msg').append('<p id="confirm">Please wait...</p>');
+    return;
+  };
+
+  function removeMsg(){
+    $('#confirm').remove();
+    return;
+  };
+
+  function errorMsg(){
+    console.log('エラーが発生しました。');
+    $('#confirm').text('エラーが発生しました。');
+    setTimeout(removeMsg, 3000);
+  }
+
+  function isMonday(date){
+   var day = new Date (date);
+   if(day.getDay() !== 1) {
+     $('#msg').append('<p id="confirm">開始日は月曜日を設定してください。</p>')
+     setTimeout(removeMsg, 3000);
+     return false;
+   };
+   return true;
+ };
+
+</script>
 </body>
 </html>
