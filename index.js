@@ -158,25 +158,29 @@ function onEdit(e) {
       //編集列より下に列があれば合わせて再計算
       if(editedRow !== lastRowOfContents){
         var range = schedule.getRange(3, 1, lastRowOfContents-3+1, taskEndLine);
+        var indexRange = schedule.getRange(3, 1, lastRowOfContents-3+1, 1);
         var data = range.getValues();
+        var indexData = indexRange.getValues();
         var row = editedRow;
+        //編集した行から最後の行まで
         for(var i = 0, len = lastRowOfContents-editedRow; i <= len; i++){
-          var editedData = data.slice(0, row-2);
+          var editedData = data.slice(0, row-2);　//一番上からIDを割り振りたい行まで抽出
+          var lastIndex = editedData.length-1;
           var col = 0;
           label_findCol:
-          for(var j = 1, len2 = editedData[0].length; j < len2; j++){
-            var lastAry = editedData.length-1;
-            if(editedData[lastAry][j] !== ''){
-              Logger.log(editedData[lastAry][0])
+          //行の中で値が入っている列を探す
+          for(var j = 1, len2 = editedData[0].length; j < len2; j++){//1からなのはNo.をスキップする為
+            if(editedData[lastIndex][j] !== ''){
               col = j+1;
               var value = writeTaskId(row, col, editedData);
-              data[lastAry][0] = value.toString();
+              data[lastIndex][0] = value.toString(); //次の計算用
+              indexData[lastIndex][0] = value.toString();
               break label_findCol;
             };
           };
           row += 1;
         };
-        range.setValues(data);
+        indexRange.setValues(indexData);
       };
       //親タスクのbold
       var fontWeightRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
@@ -706,6 +710,10 @@ function front_sumAllWorkload(){
   var indexData = schedule.getRange(1, 1, lastRowOfContents, 1).getValues();
   sumAllWorkload(indexData, workloadData, formulas, workloadRange);
 }
+
+
+
+
 
 
 
