@@ -164,7 +164,7 @@ function onEdit(e) {
         var row = editedRow;
         //編集した行から最後の行まで
         for(var i = 0, len = lastRowOfContents-editedRow; i <= len; i++){
-          var editedData = data.slice(0, row-2);　//一番上からIDを割り振りたい行まで抽出
+          var editedData = data.slice(0, row-2); //一番上からIDを割り振りたい行まで抽出
           var lastIndex = editedData.length-1;
           var col = 0;
           label_findCol:
@@ -338,10 +338,26 @@ function setMilestone(top, baseLine, baseDate, startDate, finishDate, color){
 function paintChart(top, baseLine, baseDate, startDate, finishDate, color){
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
   var duration = finishDate.diff(startDate, 'days')+1;
+  if(chartStart < baseLine){
+    duration -= baseLine-chartStart;
+    if(duration <= 0){
+      return;
+    } else {
+      if(baseLine+duration > columnNum-baseLine+1) {
+        //エラー処理入れる
+        schedule.getRange(top, baseLine, 1, columnNum-baseLine+1).setBackground(color);
+      } else {
+        //エラー処理入れる
+        schedule.getRange(top, baseLine, 1, duration).setBackground(color);
+      }  
+    }
+  };
   if (chartStart >= baseLine){
-    if (chartStart+duration > columnNum) {
+    if (chartStart+duration > columnNum-baseLine+1) {
+      //エラー処理入れる
       schedule.getRange(top, chartStart, 1, columnNum-chartStart+1).setBackground(color);
     } else {
+      //エラー処理入れる
       schedule.getRange(top, chartStart, 1, duration).setBackground(color);
     };
   };
@@ -362,8 +378,25 @@ function checkOverlap(firstStart, firstFinish, secondStart, secondFinish) {
 function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
   var duration = finishDate.diff(startDate, 'days')+1;
-  Logger.log('duration:' + duration);
-  Logger.log('progress:' + progress);
+
+  if(chartStart < baseLine){
+    duration = columnNum-baseLine+1 > duration-(baseLine-chartStart) ? duration-(baseLine-chartStart) : columnNum-baseLine+1;
+    if(duration <= 0){
+      return;
+    } else {
+      if(baseLine+duration > columnNum-baseLine+1){
+        var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
+        var progressLine = [];
+        progressLine.push([]);
+        for (var g = 0; g < markLength; g++) {
+          progressLine[0].push("'=");
+          };
+        //エラー処理入れる  
+        schedule.getRange(top, baseLine, 1, markLength).setValues(progressLine);
+      };
+    };
+  };
+  
   if (chartStart >= baseLine){
     var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
     var progressLine = [];
@@ -371,6 +404,7 @@ function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
     for (var g = 0; g < markLength; g++) {
       progressLine[0].push("'=");
     };
+    //エラー処理入れる
     schedule.getRange(top, chartStart, 1, markLength).setValues(progressLine);
   };
 };
@@ -711,9 +745,11 @@ function front_sumAllWorkload(){
   sumAllWorkload(indexData, workloadData, formulas, workloadRange);
 }
 
-
-
-
+function front_repaintChart(){
+  var baseLine = findStartPoint('progress')+1;
+  var date = Moment.moment(config.getRange(2, 1).getValue());
+  repaintChart(baseLine, date);
+}
 
 
 
