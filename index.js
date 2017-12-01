@@ -44,8 +44,10 @@ function onOpen() {
    formatGantchart(7, monday.format('YYYY/MM/DD'));
  };
  drawTodayLine();
+ front_repaintChart();
  showSidebar();
 };
+
 
 
 
@@ -89,7 +91,16 @@ function onEdit(e) {
         };
         //予定開始と予定終了で青色('#e3f0f9')
         if (plannedFinish !== '' && plannedStart !== '') {
-          paintChart(editedRow, baseLine, baseDate, plannedStart, plannedFinish, '#e3f0f9');
+          //進捗に合わせて色を変える
+          var color = judgeColor(plannedStart, plannedFinish, progress);
+          if(color === ''){
+            color = '#e3f0f9';
+            //進捗の行はオンスケなら白色
+            schedule.getRange(editedRow, indexOfProgress+1).setBackground('');
+          } else {
+            schedule.getRange(editedRow, indexOfProgress+1).setBackground(color);
+          }
+          paintChart(editedRow, baseLine, baseDate, plannedStart, plannedFinish, color);
         };
         //実際開始と実際終了で緑色('#aadca8')
         if (actualFinish !== '' && actualStart !== ''){
@@ -164,7 +175,7 @@ function onEdit(e) {
         var row = editedRow;
         //編集した行から最後の行まで
         for(var i = 0, len = lastRowOfContents-editedRow; i <= len; i++){
-          var editedData = data.slice(0, row-2); //一番上からIDを割り振りたい行まで抽出
+          var editedData = data.slice(0, row-2);　//一番上からIDを割り振りたい行まで抽出
           var lastIndex = editedData.length-1;
           var col = 0;
           label_findCol:
@@ -349,7 +360,7 @@ function paintChart(top, baseLine, baseDate, startDate, finishDate, color){
       } else {
         //エラー処理入れる
         schedule.getRange(top, baseLine, 1, duration).setBackground(color);
-      }  
+      }
     }
   };
   if (chartStart >= baseLine){
@@ -386,26 +397,38 @@ function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
     } else {
       if(baseLine+duration > columnNum-baseLine+1){
         var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
+        if(markLength === 0){return;}
         var progressLine = [];
         progressLine.push([]);
         for (var g = 0; g < markLength; g++) {
           progressLine[0].push("'=");
-          };
-        //エラー処理入れる  
-        schedule.getRange(top, baseLine, 1, markLength).setValues(progressLine);
+        };
+        try{
+          schedule.getRange(top, baseLine, 1, markLength).setValues(progressLine);
+        } catch(e){
+          Logger.log(e.message);
+          Browser.msgBox(top + '行でエラーが発生しました。');
+        }
+
       };
     };
   };
-  
+
   if (chartStart >= baseLine){
     var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
+    if(markLength === 0){return;}
     var progressLine = [];
     progressLine.push([]);
     for (var g = 0; g < markLength; g++) {
       progressLine[0].push("'=");
     };
-    //エラー処理入れる
-    schedule.getRange(top, chartStart, 1, markLength).setValues(progressLine);
+    try{
+      schedule.getRange(top, chartStart, 1, markLength).setValues(progressLine);
+    } catch(e){
+      Logger.log(e.message);
+      Browser.msgBox(top + '行でエラーが発生しました。');
+    }
+
   };
 };
 
@@ -418,7 +441,7 @@ function repaintChart(baseLine, date){
   var indexOfActualStart = data[0].indexOf('actualStart');
   var indexOfActualFinish = data[0].indexOf('actualFinish');
   var indexOfProgress = data[0].indexOf('progress');
-  
+
   copyDefultRow(3, baseLine, rowNum-3+1, columnNum-baseLine+1);
   drawTodayLine ();
   for (var i = 1, len = data.length; i < len; i++) {
@@ -426,7 +449,14 @@ function repaintChart(baseLine, date){
       setMilestone(i+2, baseLine, date, Moment.moment(data[i][indexOfPlannedStart]), Moment.moment(data[i][indexOfPlannedFinish]), '#FFBB00');
     };
     if(data[i][indexOfPlannedStart] !== '' && data[i][indexOfPlannedFinish] !== ''){
-      paintChart(i+2, baseLine, date, Moment.moment(data[i][indexOfPlannedStart]), Moment.moment(data[i][indexOfPlannedFinish]), '#e3f0f9');
+      var color = judgeColor(Moment.moment(data[i][indexOfPlannedStart]), Moment.moment(data[i][indexOfPlannedFinish]), data[i][indexOfProgress]);
+      if(color === ''){
+        color = '#e3f0f9';
+        schedule.getRange(i+2, indexOfProgress+1).setBackground('');
+      } else {
+        schedule.getRange(i+2, indexOfProgress+1).setBackground(color);
+      } 
+      paintChart(i+2, baseLine, date, Moment.moment(data[i][indexOfPlannedStart]), Moment.moment(data[i][indexOfPlannedFinish]), color);
     }
     if(data[i][indexOfActualStart] !== '' && data[i][indexOfPlannedFinish] !== ''){
       paintChart(i+2, baseLine, date, Moment.moment(data[i][indexOfActualStart]), Moment.moment(data[i][indexOfActualFinish]), '#aadca8');
@@ -673,19 +703,25 @@ function writeTaskId(row, col, data){
   };
 };
 
+//進捗に合わせて色を選ぶ
+function judgeColor(start, finish, progress){
+  var today = Moment.moment();
+  var color = '';
 
-
-
-
-
-
-
-
-
-
-
-
-
+  if(start.isSame(today, 'days') && progress < 1){
+    color = '#ffff00'; //黄色
+  };
+  if(start.isBefore(today, 'days') && progress < 1){
+    var actualProgress = finish.diff(start, 'days') * progress;
+    var idealProgress = today.diff(start, 'days');
+    if(actualProgress > idealProgress){
+      color = '#ffff00'; //黄色
+    } else {
+    color = '#ff0000'; //赤色
+  };
+};
+return color;
+}
 
 //祝日のセット
 function setHolidays(data){
@@ -733,23 +769,23 @@ SpreadsheetApp.getUi()
 
 
 
-/*↓ クライアント用functions ↓*/
+  /*↓ クライアント用functions ↓*/
 
-function front_sumAllWorkload(){
-  var colOfPlannedWorkload = findStartPoint('plannedWorkload');
-  var lastRowOfContents = schedule.getLastRow();
-  var workloadRange = schedule.getRange(1, colOfPlannedWorkload, lastRowOfContents, 1);
-  var workloadData = workloadRange.getValues();
-  var formulas = workloadRange.getFormulas();
-  var indexData = schedule.getRange(1, 1, lastRowOfContents, 1).getValues();
-  sumAllWorkload(indexData, workloadData, formulas, workloadRange);
-}
+  function front_sumAllWorkload(){
+    var colOfPlannedWorkload = findStartPoint('plannedWorkload');
+    var lastRowOfContents = schedule.getLastRow();
+    var workloadRange = schedule.getRange(1, colOfPlannedWorkload, lastRowOfContents, 1);
+    var workloadData = workloadRange.getValues();
+    var formulas = workloadRange.getFormulas();
+    var indexData = schedule.getRange(1, 1, lastRowOfContents, 1).getValues();
+    sumAllWorkload(indexData, workloadData, formulas, workloadRange);
+  }
 
-function front_repaintChart(){
-  var baseLine = findStartPoint('progress')+1;
-  var date = Moment.moment(config.getRange(2, 1).getValue());
-  repaintChart(baseLine, date);
-}
+  function front_repaintChart(){
+    var baseLine = findStartPoint('progress')+1;
+    var date = Moment.moment(config.getRange(2, 1).getValue());
+    repaintChart(baseLine, date);
+  }
 
 
 
