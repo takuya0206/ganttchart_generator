@@ -17,10 +17,31 @@ var rowNum = schedule.getMaxRows();
 var chartWidth = 168;
 
 //フォーマット用アセット
-var scheduleItems = [
-['No.', '階層別 タスク一覧','','','','', '予定開始', '予定終了', '実際開始', '実際終了', '工数\n（予｜実）','', '担当', '進捗'],
-['wbs', 'lv1','lv2','lv3','lv4','lv5','plannedStart', 'plannedFinish', 'actualStart', 'actualFinish', 'plannedWorkload', 'actualWorkload', 'responsiblity', 'progress']
-];
+var lang = Session.getActiveUserLocale();
+
+if(lang === 'ja'){
+  var scheduleItems = [['No.', '階層別 タスク一覧','','','','', '予定開始', '予定終了', '実際開始', '実際終了', '工数\n（予｜実）','', '担当', '進捗'],  
+  ['wbs', 'lv1','lv2','lv3','lv4','lv5','plannedStart', 'plannedFinish', 'actualStart', 'actualFinish', 'plannedWorkload', 'actualWorkload', 'responsiblity', 'progress']
+  ];
+  var note = '手動で祝日を編集するときは、必ず日付をA列に入力してください。編集が終わったらガントチャートの初期化をしてください';
+  var menuName = 'カスタムメニュー';
+  var menuText = 'サイドバーの表示';
+  var format = 'YYYY/MM/DD';
+  var cellformat = 'yyyy/mm/dd';
+} else{
+  var scheduleItems = [['No.', 'Work Breakdown Structure','','','','', 'Planned Start', 'Planned Finish', 'Actual Start', 'Actual Finish', 'Workload\n（Plan｜Actual）','', 'In Charge', 'Progress'],
+  ['wbs', 'lv1','lv2','lv3','lv4','lv5','plannedStart', 'plannedFinish', 'actualStart', 'actualFinish', 'plannedWorkload', 'actualWorkload', 'responsiblity', 'progress']
+  ];
+  var note = 'The default holidays are based on Japanese calendar. When editing holidays, please set date in A column and initalize the gantt chart by using the sidebar.';
+  var menuName = 'Custom Menu';
+  var menuText = 'Show Sidebar';
+  var format = 'MMM Do YY';
+  var cellformat = 'MMM d yyyy';
+}
+
+
+
+
 var configItems = [['baseDate', 'Chartspan']];
 var scheduleItemsLength = scheduleItems[0].length;
 var configItemsLength = configItems[0].length;
@@ -29,19 +50,18 @@ var configItemsLength = configItems[0].length;
 
 function onOpen() {
   if(firstRow.isBlank()) {
-    var today = Moment.moment();
+    init();
     var data = getHolidays();
     //開始日が月曜スタートになるよう調整
+    var date = Moment.moment().subtract(7, 'days');
     var tmp = 0;
-    while (Math.abs(today.day()) + tmp <= 7) {
+    while (Math.abs(date.day()) + tmp <= 7) {
      tmp++;
    };
-   var monday = today.add(tmp, 'days');
-
+   var monday = date.add(tmp, 'days');
    setHolidays(data);
-   holiday.getRange(1,1).setNote('手動で祝日を編集するときは、必ずA列だけに追加をするようにしてください。ガンチャートの反映には「プロジェクトの開始日の設定」を行ってください。');
-   init();
-   formatGantchart(7, monday.format('YYYY/MM/DD'));
+   holiday.getRange(1,1).setNote(note);
+   formatGantchart(7, monday);
  };
  drawTodayLine();
  front_repaintChart();
@@ -175,7 +195,7 @@ function onEdit(e) {
         var row = editedRow;
         //編集した行から最後の行まで
         for(var i = 0, len = lastRowOfContents-editedRow; i <= len; i++){
-          var editedData = data.slice(0, row-2);　//一番上からIDを割り振りたい行まで抽出
+          var editedData = data.slice(0, row-2);//一番上からIDを割り振りたい行まで抽出
           var lastIndex = editedData.length-1;
           var col = 0;
           label_findCol:
@@ -245,8 +265,7 @@ function init(){
   schedule.getRange(1, indexOfPlannedWorkload+1, 1, 2).merge();
   //文字表示フォーマット
   schedule.getRange(3, indexOfProgress+1, rowNum-3, 1).setNumberFormat('0%');
-  schedule.getRange(3, indexOfPlannedStart+1, rowNum-3, 2).setNumberFormat('yyyy/mm/dd');
-  schedule.getRange(3, indexOfActualStart+1, rowNum-3, 2).setNumberFormat('yyyy/mm/dd');
+  schedule.getRange(3, indexOfPlannedStart+1, rowNum-3, 4).setNumberFormat(cellformat);
 
   //configページ
   var configItemsRange = config.getRange(1, 1, 1, configItemsLength);
@@ -292,7 +311,7 @@ function formatGantchart(span, date) {
   var baseLine = findStartPoint('progress')+1;
   var date = Moment.moment(date);
   var baseDateCell = config.getRange(2, 1);
-  baseDateCell.setValue(date.format('YYYY/MM/DD'));
+  baseDateCell.setValue(date.format(format));
 
   //列幅、列数、土日祝の色塗り
   adjustColums(baseLine, chartWidth, 25);
@@ -309,11 +328,11 @@ function formatGantchart(span, date) {
   var chartRange = schedule.getRange(1, baseLine, 1, columnNum-baseLine+1);
   var chartData = chartRange.getValues();
   chartRange.setHorizontalAlignment('left');
-  chartData[0][0] = '(' + calDate.format('YYYY/MM/DD') + ')';
+  chartData[0][0] = '(' + calDate.format(format) + ')';
   for (var i = 1, len = chartData[0].length; i < len; i++){
     if(i % 7 === 0){
       calDate = calDate.add(span, 'days');
-      chartData[0][i] = '(' + calDate.format('YYYY/MM/DD') + ')';
+      chartData[0][i] = '(' + calDate.format(format) + ')';
     };
   };
   chartRange.setValues(chartData);
@@ -325,7 +344,7 @@ function formatGantchart(span, date) {
 function findStartPoint(text) {
   var ary = schedule.getRange('2:2').getValues();
   if (ary[0].indexOf(text) < 0) {
-    Browser.msgBox('2列目が変更されています。初期化してください');
+    Browser.msgBox('System Error: Please initalize the gantt chart.');
   } else {
    return ary[0].indexOf(text)+1;
  };
@@ -406,8 +425,7 @@ function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
         try{
           schedule.getRange(top, baseLine, 1, markLength).setValues(progressLine);
         } catch(e){
-          Logger.log(e.message);
-          Browser.msgBox(top + '行でエラーが発生しました。');
+          Browser.msgBox('System Error (No. ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
         }
 
       };
@@ -425,8 +443,7 @@ function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
     try{
       schedule.getRange(top, chartStart, 1, markLength).setValues(progressLine);
     } catch(e){
-      Logger.log(e.message);
-      Browser.msgBox(top + '行でエラーが発生しました。');
+      Browser.msgBox('System Error (No. ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
     }
 
   };
@@ -455,7 +472,7 @@ function repaintChart(baseLine, date){
         schedule.getRange(i+2, indexOfProgress+1).setBackground('');
       } else {
         schedule.getRange(i+2, indexOfProgress+1).setBackground(color);
-      } 
+      }
       paintChart(i+2, baseLine, date, Moment.moment(data[i][indexOfPlannedStart]), Moment.moment(data[i][indexOfPlannedFinish]), color);
     }
     if(data[i][indexOfActualStart] !== '' && data[i][indexOfPlannedFinish] !== ''){
@@ -751,10 +768,28 @@ function getHolidays() {
 };
 
 
+//scheduleシートを初期値へ戻す
+function resetAll(msg){
+  var isDelete = Browser.msgBox(msg, Browser.Buttons.YES_NO);
+  if(isDelete === 'yes'){
+    schedule.clear();
+    init();
+    //開始日が月曜スタートになるよう調整
+    var date = Moment.moment().subtract(7, 'days');
+    var tmp = 0;
+    while (Math.abs(date.day()) + tmp <= 7) {
+      tmp++;
+    };
+    var monday = date.add(tmp, 'days');
+    formatGantchart(7, monday);
+    drawTodayLine();
+  };
+}
+
 //サイドバーの表示
 function showSidebar() {
   var html = HtmlService.createHtmlOutputFromFile('Page')
-  .setTitle('プロジェクトマネジメント')
+  .setTitle('Gantt Chart Generator')
   .setWidth(300);
   SpreadsheetApp.getUi()
   .showSidebar(html);
@@ -762,11 +797,9 @@ function showSidebar() {
 
 //カスタムメニューをUIに追加
 SpreadsheetApp.getUi()
-.createMenu('カスタムメニュー')
-  .addItem('サイドバーの表示', 'showSidebar') //表示名、関数名
+.createMenu(menuName)
+  .addItem(menuText, 'showSidebar') //表示名、関数名
   .addToUi();
-
-
 
 
   /*↓ クライアント用functions ↓*/
