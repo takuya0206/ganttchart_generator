@@ -44,10 +44,10 @@
     </div>
 
     <div class="block form-group">
-      <label id="textRecal"></label>
+      <label id="Recal"></label>
       <form name="recalculate">
         <select name="dataName">
-          <option id="Plannedwork" value="plannedWorkload"></option>
+          <option id="PlannedWork" value="plannedWorkload"></option>
           <option id='Progress' value="progress"></option>
         </select>
         <input type="button" class="action" value="" onclick="send_recalculate();">
@@ -90,11 +90,18 @@
 
 
     var lang = (window.navigator.languages && window.navigator.languages[0]) || window.navigator.language || window.navigator.userLanguage || window.navigator.browserLanguage;
-
+    
+    
+    var textDonation = lang === 'ja' ? '投げ銭' : 'Donation';
+    var textInquire = lang === 'ja' ? '問い合せ' : 'Inquire';
+    var textHowto = lang === 'ja' ? '使い方' : 'How to Use';
+    var linkDonation = lang === 'ja' ? 'https://www.google.co.jp' : 'https://www.google.com';
+    var linkInquire = lang === 'ja' ? 'https://www.google.co.jp' : 'https://www.google.com';
+    var linkHowto = lang === 'ja' ? 'https://www.google.co.jp' : 'https://www.google.com';
     var textTitle = lang === 'ja' ? 'ガントチャートの操作' : 'Edit Gantt Chart';
     var textSetStart = lang === 'ja' ? 'ガントチャートの開始日を変更' : 'Change Start Date';
     var textRecal = lang === 'ja' ? 'データの再計算' : 'Recalculate Data';
-    var textPlannedwork = lang === 'ja' ? '工数（予）' : 'Planned Workload';
+    var textPlannedWork = lang === 'ja' ? '工数（予）' : 'Planned Workload';
     var textProgress = lang === 'ja' ? '進捗' : 'Progress';
     var textRedo = lang === 'ja' ? 'プログラムの再実行' : 'Redo Programm';
     var textPaint = lang === 'ja' ? 'ガントチャート色塗り' : 'Paint Gantt Chart';
@@ -102,12 +109,7 @@
     var textButton = lang === 'ja' ? '実行' : 'Done';
     var textMonday = lang === 'ja' ? '月曜日を設定してください。' : 'Start date should be Monday.'
     var textConfirm = lang === 'ja' ? '全てのデータが削除されます。よろしいでしょうか？' : 'Please confirm. All of the data will be deleted.'
-    var textDonation = lang === 'ja' ? '投げ銭' : 'Donation';
-    var textInquire = lang === 'ja' ? '問い合せ' : 'Inquire';
-    var textHowto = lang === 'ja' ? '使い方' : 'How to Use';
-    var linkDonation = lang === 'ja' ? 'https://www.google.co.jp' : 'https://www.google.com';
-    var linkInquire = lang === 'ja' ? 'https://www.google.co.jp' : 'https://www.google.com';
-    var linkHowto = lang === 'ja' ? 'https://www.google.co.jp' : 'https://www.google.com';
+
 
     $('#Donation').text(textDonation);
     $('#Donation').attr("href", linkDonation);
@@ -115,11 +117,10 @@
     $('#Inquire').attr("href", linkInquire);
     $('#Howto').text(textHowto);
     $('#Howto').attr("href", linkHowto);
-
     $('#Title').text(textTitle);
     $('#SetStart').text(textSetStart);
     $('#Recal').text(textRecal);
-    $('#Plannedwork').text(textPlannedwork);
+    $('#PlannedWork').text(textPlannedWork);
     $('#Progress').text(textProgress);
     $('#Redo').text(textRedo);
     $('#Paint').text(textPaint);
@@ -129,7 +130,7 @@
       $(this).val(textButton);
     })
 
-     $('.create').each(function(){
+    $('.create').each(function(){
       $(this).val(textButton);
     })
 
@@ -164,57 +165,60 @@
         google.script.run
         .withSuccessHandler(successMsg)
         .withFailureHandler(errorMsg)
-        .front_sumAllWorkload();
+        .front_sumAllWnP();
         break;
         case "progress":
-          //進捗を再計算するプログラムを入れる
-          console.log("progress");
-          break;
-        };
-      }
-
-
-      function send_setStartDate(){
-        var formObj = document.forms.setStartDate;
-        if (isMonday(formObj.startDate.value) == true) {
-         startWait();
-         google.script.run
-         .withSuccessHandler(successMsg)
-         .withFailureHandler(errorMsg)
-         .formatGantchart(7, formObj.startDate.value);
-       };
-     };
-
-     function startWait(){
-      $('#confirm').text('Please wait...');
-      return;
+        startWait();
+        google.script.run
+        .withSuccessHandler(successMsg)
+        .withFailureHandler(errorMsg)
+        .front_sumAllProgress();
+        break;
+      };
     };
 
-    function removeMsg(){
-      $('#confirm').text('');
-      return;
-    };
 
-    function successMsg(){
-      $('#confirm').text('Successfully done');
-      setTimeout(removeMsg, 4000);
-    }
-
-    function errorMsg(){
-      $('#confirm').text('System error');
-      setTimeout(removeMsg, 4000);
-    }
-
-    function isMonday(date){
-     var day = new Date (date);
-     if(day.getDay() !== 1) {
-       $('#confirm').text(textMonday);
-       setTimeout(removeMsg, 4000);
-       return false;
+    function send_setStartDate(){
+      var formObj = document.forms.setStartDate;
+      if (isMonday(formObj.startDate.value) == true) {
+       startWait();
+       google.script.run
+       .withSuccessHandler(successMsg)
+       .withFailureHandler(errorMsg)
+       .formatGantchart(7, formObj.startDate.value);
      };
-     return true;
    };
 
- </script>
+   function startWait(){
+    $('#confirm').text('Please wait...');
+    return;
+  };
+
+  function removeMsg(){
+    $('#confirm').text('');
+    return;
+  };
+
+  function successMsg(){
+    $('#confirm').text('Successfully done');
+    setTimeout(removeMsg, 4000);
+  }
+
+  function errorMsg(){
+    $('#confirm').text('System error');
+    setTimeout(removeMsg, 4000);
+  }
+
+  function isMonday(date){
+   var day = new Date (date);
+   if(day.getDay() !== 1) {
+     $('#confirm').text(textMonday);
+     setTimeout(removeMsg, 4000);
+     return false;
+   };
+   return true;
+ };
+
+</script>
 </body>
 </html>
