@@ -24,6 +24,8 @@ function resetAll(msg){
   Logger.log('resetAll start');
   var isComfirmed = Browser.msgBox(msg, Browser.Buttons.YES_NO);
   if(isComfirmed === 'yes'){
+    if(!schedule){schedule = ss.insertSheet('schedule', 1);}
+    if(!holiday){holiday = ss.insertSheet('holiday', 2);}
     schedule.clear();
     holiday.clear();
     init();
@@ -65,10 +67,15 @@ function init(){
   var indexOfPlannedWorkload = scheduleItems[1].indexOf('plannedWorkload');
   var indexOfActualWorkload = scheduleItems[1].indexOf('actualWorkload');
   var indexOfProgress = scheduleItems[1].indexOf('progress');
+  var rowNum = schedule.getMaxRows();
+  var columnNum = schedule.getMaxColumns();
   memo.setProperties({
     'format': format,
     'cellformat': cellformat
   });
+  //dataValidation
+  var rule_date = SpreadsheetApp.newDataValidation().requireDate().build();
+  var rule_int = SpreadsheetApp.newDataValidation().requireNumberGreaterThan(-1).build();
   //format related to items
   schedule.getRange('A:A').setHorizontalAlignment('left').setBackground('#f3f3f3');
   firstRow.setBackground('#f3f3f3');
@@ -84,10 +91,12 @@ function init(){
   };
   schedule.setColumnWidth(indexOfPlannedWorkload+1, 45);
   schedule.setColumnWidth(indexOfActualWorkload+1, 45);
+  schedule.getRange(3, indexOfPlannedWorkload+1,rowNum-3+1, 2).setDataValidation(rule_int);
   schedule.getRange(1, indexOfPlannedWorkload+1, 1, 2).merge();
-  schedule.getRange(3, indexOfProgress+1, rowNum-3, 1).setNumberFormat('0.0%');
-  schedule.getRange(3, indexOfPlannedStart+1, rowNum-3, 4).setNumberFormat(cellformat);
+  schedule.getRange(3, indexOfProgress+1, rowNum-3+1, 1).setNumberFormat('0.0%').setDataValidation(rule_int);
+  schedule.getRange(3, indexOfPlannedStart+1, rowNum-3+1, 4).setNumberFormat(cellformat).setDataValidation(rule_date);
   holiday.getRange(1, 1).setNote(note);
+  holiday.getRange('A:A').setNumberFormat(cellformat).setDataValidation(rule_date);
   //adjust the number of rows
   if(rowNum > 200){
     schedule.deleteRows(200, rowNum-200);
@@ -134,7 +143,8 @@ function updateChart(data, startRow, endRow, baseLine, baseDate){
   var indexOfPlannedWorkload = data[1].indexOf('plannedWorkload');
   var indexOfActualWorkload = data[1].indexOf('actualWorkload');
   var indexOfProgress = data[1].indexOf('progress');
-  copyDefaultRow(startRow, baseLine, endRow-startRow+1, columnNum-baseLine); //initalize the target range
+  var columnNum = schedule.getMaxColumns();
+  copyDefaultRow(startRow, baseLine, endRow-startRow+1, columnNum-baseLine+1); //initalize the target range
   for (var i = startRow; i <= endRow; i++){
     var index = i-1;
     var plannedStart = Moment.moment(data[index][indexOfPlannedStart]);
@@ -152,8 +162,7 @@ function updateChart(data, startRow, endRow, baseLine, baseDate){
         showDateErrorMsg(i);
         return;
       };
-      //show alert color based on the progress
-      var color = judgeColor(plannedStart, plannedFinish, progress);
+      var color = judgeColor(plannedStart, plannedFinish, progress); //show alert color based on the progress
       //if the progress is on schedule, don't paint the progress column
       if(color === ''){
         color = '#e3f0f9'; //blue
@@ -198,7 +207,7 @@ function showDateErrorMsg(row){
 
 function copyDefaultRow(top, left, height, width, option){
   Logger.log('copyDefaultRow start');
-  var range = schedule.getRange(2, left, 1, columnNum-left+1);
+  var range = schedule.getRange(2, left, 1, width);
   if (!option){
     range.copyTo(schedule.getRange(top, left, height, width));
   } else {
@@ -209,8 +218,9 @@ function copyDefaultRow(top, left, height, width, option){
 
 function setMilestone(top, baseLine, baseDate, startDate, finishDate, color){
   Logger.log('setMilestone start');
+  var columnNum = schedule.getMaxColumns();
   var chartFinish = baseLine + finishDate.diff(baseDate, 'days');
-  if (chartFinish >= baseLine && chartFinish < columnNum){
+  if (chartFinish >= baseLine && chartFinish <= columnNum){
     schedule.getRange(top, chartFinish).setBackground(color);
   };
 };
@@ -238,6 +248,7 @@ function judgeColor(start, finish, progress){
 
 function paintChart(top, baseLine, baseDate, startDate, finishDate, color){
   Logger.log('paintChart start');
+  var columnNum = schedule.getMaxColumns();
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
   var duration = finishDate.diff(startDate, 'days')+1;
   if(chartStart < baseLine){
@@ -280,6 +291,7 @@ function checkOverlap(firstStart, firstFinish, secondStart, secondFinish) {
 
 function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
   Logger.log('markProgress start');
+  var columnNum = schedule.getMaxColumns();
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
   var duration = finishDate.diff(startDate, 'days')+1;
   if(chartStart < baseLine){
@@ -333,6 +345,7 @@ function drawTodayLine() {
  var lastRowOfContents = schedule.getLastRow();
  var nextBaseLine = baseLine + 1;
  var todayLine = baseLine + today.diff(baseDate, 'days');
+ var columnNum = schedule.getMaxColumns();
  //delete an old line
  var markInAry = schedule.getRange(2, nextBaseLine, 1, columnNum-nextBaseLine+1).getValues();
  var markColumn = markInAry[0].indexOf('|') + nextBaseLine;
@@ -374,7 +387,7 @@ function findStartPoint(text) {
     return false;
   } else {
     return ary[0].indexOf(text)+1;
-  };
+    };
 };
 
 
@@ -413,6 +426,7 @@ function formatGantchart(span, date) {
   var date = Moment.moment(date);
   var format = memo.getProperty('format');
   var chartWidth = 168;
+  var columnNum = schedule.getMaxColumns();
   memo.setProperty('baseDate', date.format(format));
   //The number and the width of rows
   adjustColums(baseLine, chartWidth, 25);
@@ -441,18 +455,21 @@ function formatGantchart(span, date) {
 
 function adjustColums(baseLine, num, width){
   Logger.log('adjustColums start');
+  var columnNum = schedule.getMaxColumns();
   var deleteNum = columnNum - baseLine;
+  var rowNum = schedule.getMaxRows();
   schedule.setColumnWidth(baseLine, width);
   schedule.getRange(1, baseLine, rowNum, 1).clearContent();
   schedule.getRange(2, baseLine, rowNum-2+1, 1).setBackground('');
   schedule.deleteColumns(baseLine+1,deleteNum);
   schedule.insertColumnsAfter(baseLine, num-1);
-  columnNum = schedule.getMaxColumns();
 };
 
 
 function paintWeekdays(baseLine, span, color){
   Logger.log('paintWeekdays start');
+  var rowNum = schedule.getMaxRows();
+  var columnNum = schedule.getMaxColumns();
   var wkendStart = 5;
   var range = schedule.getRange(1, baseLine, rowNum+1, span);
   range.setBorder(null, true, null, true, false, false, "black", SpreadsheetApp.BorderStyle.SOLID);
@@ -462,6 +479,8 @@ function paintWeekdays(baseLine, span, color){
 
 
 function paintHolidays(baseLine, date, color){
+  var rowNum = schedule.getMaxRows();
+  var columnNum = schedule.getMaxColumns();
   Logger.log('paintHolidays start');
   try{
     var data = holiday.getRange(1, 1, holiday.getLastRow(), 1).getValues();
@@ -482,7 +501,7 @@ function paintHolidays(baseLine, date, color){
 
 function findParentTasks(data, baseId){
   var parentTasks = [];
-  if(baseId){//find parent tasks related to baseId
+  if(baseId){ //find parent tasks related to baseId
     var taskIdAry = baseId.toString().split('_');
     for (var i = 0, len = taskIdAry.length-1; i < len; i++){
       taskIdAry.pop();
@@ -493,9 +512,9 @@ function findParentTasks(data, baseId){
             'ID' : tmp,
             'index': j
           });
-        };
       };
     };
+  };
  } else { //find all parent tasks
    for (var i = 0, len = data.length-1; i < len; i++){
     var tmp = data[i][0].toString() + '_1';
@@ -509,8 +528,8 @@ function findParentTasks(data, baseId){
       };
     };
   };
-};
-return parentTasks;
+ };
+  return parentTasks;
 };
 
 
@@ -542,8 +561,8 @@ function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, ba
             data[j][workloadCol] = '' === data[j][workloadCol] ? 0 : data[j][workloadCol];
             data[j][progressCol] = '' === data[j][progressCol] ? 0 : data[j][progressCol];
 
-            data[currentIndex][workloadCol] += data[j][workloadCol]
-            earnedVal += data[j][workloadCol] * data[j][progressCol];
+            data[currentIndex][workloadCol] += parseInt(data[j][workloadCol]);
+            earnedVal += parseInt(data[j][workloadCol]) * parseInt(data[j][progressCol]);
           };
         };
       };
@@ -559,7 +578,7 @@ function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, ba
       if(plannedStart.format('YYYY') !== 'Invalid date' && plannedFinish.format('YYYY') !== 'Invalid date'){
         updateChart(data, currentIndex+1, currentIndex+1, progressCol+2, baseDate);
       };
-    };
+  };
   //reflect the exiting formulas
   for(var i = 0, len = formulas.length; i < len; i++){
     for(var j = 0, len2 = formulas[0].length; j < len2; j++){
@@ -620,10 +639,12 @@ function createTaskId(baseData, taskData, taskEndLine, startRow){
         };
         distanceToPar += 1;
       };
+
       Logger.log('broId:' + broId);
       Logger.log('parId:' + parId);
       Logger.log('distanceToBro:' + distanceToBro);
       Logger.log('distanceToPar:' + distanceToPar);
+
       //judgement
       if (isBro === false && isPar === false){
         result = 1;
@@ -659,7 +680,7 @@ function makeParentBold(data, range){
       info[i].push('normal');
     };
   };
-  //reflect fontWeight on the baseData if it's a parent task
+  //reflect baseData on the array if it's a parent task
   for (var i = 2, len = data.length; i < len; i++){
     var tmp = data[i][0].toString() + '_1';
     for (var j = i, len2 = data.length; j < len2; j++){

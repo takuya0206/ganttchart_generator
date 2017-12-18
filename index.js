@@ -5,8 +5,6 @@ Logger.log('Google Apps Script on...');
 var ss = SpreadsheetApp.getActive();
 var schedule = ss.getSheetByName('schedule');
 var holiday = ss.getSheetByName('holiday');
-var columnNum = schedule.getMaxColumns();
-var rowNum = schedule.getMaxRows();
 
 
 function onInstall(e) {
@@ -48,6 +46,11 @@ function onEdit(e) {
     var baseRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
     var baseData = baseRange.getValues();
 
+    //nothing happens if you edit the first and second row
+    if(editedRow === 1 || editedRow === 2){
+       return;
+    };
+
     if (selectedItem === 'plannedStart' || selectedItem === 'plannedFinish' || selectedItem === 'actualStart' || selectedItem === 'actualFinish' || selectedItem === 'progress') {
       Logger.log('Paint the gantt chart');
       updateChart(baseData, editedRow, lastRow, baseLine, baseDate);
@@ -60,7 +63,7 @@ function onEdit(e) {
       var formulas = baseRange.getFormulas();
       if(editedRow === lastRow){
         Logger.log('the number of target is one');
-        var parentTasks = findParentTasks(baseData, baseData[editedRow][0]);
+        var parentTasks = findParentTasks(baseData, baseData[editedRow-1][0]);
         var newData = sumTwoColumns(baseData, formulas, indexOfPlannedWorkload, indexOfProgress, parentTasks, baseDate);
         for (var i = 0, len = parentTasks.length; i < len; i++){
           schedule.getRange(parentTasks[i]['index']+1, indexOfPlannedWorkload+1).setValue(newData[parentTasks[i]['index']][indexOfPlannedWorkload]);
@@ -132,3 +135,10 @@ function onEdit(e) {
     };
   };
 };
+
+
+
+
+
+
+
