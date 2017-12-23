@@ -154,7 +154,7 @@ function updateChart(data, startRow, endRow, baseLine, baseDate){
     var progress = data[index][indexOfProgress];
     //if only planned finish is filled, paint a cell in orange(#FFBB00)
     if (plannedFinish.format('YYYY') !== 'Invalid date' && plannedStart.format('YYYY') === 'Invalid date') {
-      setMilestone(i, baseLine, baseDate, plannedStart, plannedFinish, '#FFBB00');
+      setMilestone(i, baseLine, baseDate, plannedStart, plannedFinish, '#FFBB00', columnNum);
     };
     //if planned start and planned finish are filled, paint a range in blue(#e3f0f9)
     if (plannedFinish.format('YYYY') !== 'Invalid date' && plannedStart.format('YYYY') !== 'Invalid date') {
@@ -170,7 +170,7 @@ function updateChart(data, startRow, endRow, baseLine, baseDate){
       } else {
         schedule.getRange(i, indexOfProgress+1).setBackground(color);
       }
-      paintChart(i, baseLine, baseDate, plannedStart, plannedFinish, color);
+      paintChart(i, baseLine, baseDate, plannedStart, plannedFinish, color, columnNum);
     };
     //if actual start and actual finish are filled, paint a range in green(#aadca8)
     if (actualFinish.format('YYYY') !== 'Invalid date' && actualStart.format('YYYY') !== 'Invalid date'){
@@ -178,13 +178,13 @@ function updateChart(data, startRow, endRow, baseLine, baseDate){
         showDateErrorMsg(i);
         return;
       };
-      paintChart(i, baseLine, baseDate, actualStart, actualFinish, '#aadca8');
+      paintChart(i, baseLine, baseDate, actualStart, actualFinish, '#aadca8', columnNum);
     };
     //if there is overlap, make it strong green（#99c6ca）
     if (plannedFinish.format('YYYY') !== 'Invalid date' && plannedStart.format('YYYY') !== 'Invalid date' && actualFinish.format('YYYY') !== 'Invalid date' && actualStart.format('YYYY') !== 'Invalid date'){
       var isOverlap = checkOverlap(plannedStart, plannedFinish, actualStart, actualFinish);
       if (isOverlap !== false) {
-        paintChart(i, baseLine, baseDate, isOverlap[0], isOverlap[1], '#99c6ca');
+        paintChart(i, baseLine, baseDate, isOverlap[0], isOverlap[1], '#99c6ca', columnNum);
       };
     };
     //mark progress by using '='
@@ -216,9 +216,8 @@ function copyDefaultRow(top, left, height, width, option){
 };
 
 
-function setMilestone(top, baseLine, baseDate, startDate, finishDate, color){
+function setMilestone(top, baseLine, baseDate, startDate, finishDate, color, columnNum){
   Logger.log('setMilestone start');
-  var columnNum = schedule.getMaxColumns();
   var chartFinish = baseLine + finishDate.diff(baseDate, 'days');
   if (chartFinish >= baseLine && chartFinish <= columnNum){
     schedule.getRange(top, chartFinish).setBackground(color);
@@ -230,25 +229,28 @@ function judgeColor(start, finish, progress){
   Logger.log('judgeColor start');
   var today = Moment.moment();
   var color = '';
-  if(start.isSame(today, 'days') && progress < 1){
+  var memo = PropertiesService.getDocumentProperties();
+  var isRequired = memo.getProperty('colorIndicator');
+  if(isRequired === 'true'){
+    if(start.isSame(today, 'days') && progress < 1){
     color = '#ffff00'; //yellow
   };
   if(start.isBefore(today, 'days') && progress < 1){
     var actualProgress = finish.diff(start, 'days') * progress;
     var idealProgress = today.diff(start, 'days');
-    if(actualProgress > idealProgress){
-      color = '#ffff00'; //yellow
-    } else {
-      color = '#ff0000'; //red
+    if(actualProgress >= idealProgress){
+        color = '#ffff00'; //yellow
+      } else {
+        color = '#ff0000'; //red
+      };
     };
   };
   return color;
 };
 
 
-function paintChart(top, baseLine, baseDate, startDate, finishDate, color){
+function paintChart(top, baseLine, baseDate, startDate, finishDate, color, columnNum){
   Logger.log('paintChart start');
-  var columnNum = schedule.getMaxColumns();
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
   var duration = finishDate.diff(startDate, 'days')+1;
   if(chartStart < baseLine){
@@ -257,21 +259,33 @@ function paintChart(top, baseLine, baseDate, startDate, finishDate, color){
       return;
     } else {
       if(baseLine+duration > columnNum-baseLine+1) {
-        //エラー処理入れる
-        schedule.getRange(top, baseLine, 1, columnNum-baseLine+1).setBackground(color);
+        try{
+          schedule.getRange(top, baseLine, 1, columnNum-baseLine+1).setBackground(color);
+        } catch(e){
+          Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
+        }; 
       } else {
-        //エラー処理入れる
-        schedule.getRange(top, baseLine, 1, duration).setBackground(color);
-      }
-    }
+        try{ 
+          schedule.getRange(top, baseLine, 1, duration).setBackground(color);
+        } catch(e){
+          Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
+        };
+      };
+    };
   };
   if (chartStart >= baseLine){
     if (chartStart+duration > columnNum-baseLine+1) {
-      //エラー処理入れる
-      schedule.getRange(top, chartStart, 1, columnNum-chartStart+1).setBackground(color);
+      try{
+        schedule.getRange(top, chartStart, 1, columnNum-chartStart+1).setBackground(color);
+      } catch(e){
+        Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
+      };
     } else {
-      //エラー処理入れる
-      schedule.getRange(top, chartStart, 1, duration).setBackground(color);
+      try{
+        schedule.getRange(top, chartStart, 1, duration).setBackground(color);
+      } catch(e){
+        Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
+      };
     };
   };
 };
@@ -387,7 +401,7 @@ function findStartPoint(text) {
     return false;
   } else {
     return ary[0].indexOf(text)+1;
-    };
+  };
 };
 
 
@@ -426,13 +440,15 @@ function formatGantchart(span, date) {
   var date = Moment.moment(date);
   var format = memo.getProperty('format');
   var chartWidth = 168;
+  var rowNum = schedule.getMaxRows();
   var columnNum = schedule.getMaxColumns();
   memo.setProperty('baseDate', date.format(format));
   //The number and the width of rows
-  adjustColums(baseLine, chartWidth, 25);
+  adjustColums(baseLine, chartWidth, 25, rowNum, columnNum);
+  columnNum = schedule.getMaxColumns();
   //Change the color in weekdays and holidays
-  paintWeekdays(baseLine, span, '#fcefe3');
-  paintHolidays(baseLine, date, '#fcefe3');
+  paintWeekdays(baseLine, span, '#fcefe3', rowNum, columnNum);
+  paintHolidays(baseLine, date, '#fcefe3', rowNum, columnNum);
   //if the schedule sheet has some contents...
   if (schedule.getLastRow() > 2){
     front_updateChart();
@@ -453,11 +469,9 @@ function formatGantchart(span, date) {
 };
 
 
-function adjustColums(baseLine, num, width){
+function adjustColums(baseLine, num, width, rowNum, columnNum){
   Logger.log('adjustColums start');
-  var columnNum = schedule.getMaxColumns();
   var deleteNum = columnNum - baseLine;
-  var rowNum = schedule.getMaxRows();
   schedule.setColumnWidth(baseLine, width);
   schedule.getRange(1, baseLine, rowNum, 1).clearContent();
   schedule.getRange(2, baseLine, rowNum-2+1, 1).setBackground('');
@@ -466,10 +480,8 @@ function adjustColums(baseLine, num, width){
 };
 
 
-function paintWeekdays(baseLine, span, color){
+function paintWeekdays(baseLine, span, color, rowNum, columnNum){
   Logger.log('paintWeekdays start');
-  var rowNum = schedule.getMaxRows();
-  var columnNum = schedule.getMaxColumns();
   var wkendStart = 5;
   var range = schedule.getRange(1, baseLine, rowNum+1, span);
   range.setBorder(null, true, null, true, false, false, "black", SpreadsheetApp.BorderStyle.SOLID);
@@ -478,16 +490,13 @@ function paintWeekdays(baseLine, span, color){
 };
 
 
-function paintHolidays(baseLine, date, color){
-  var rowNum = schedule.getMaxRows();
-  var columnNum = schedule.getMaxColumns();
+function paintHolidays(baseLine, date, color, rowNum, columnNum){
   Logger.log('paintHolidays start');
   try{
     var data = holiday.getRange(1, 1, holiday.getLastRow(), 1).getValues();
   }
   catch(e){
-    Logger.log(e.message);
-    Logger.log('No holidays');
+    Logger.log('No holidays: ' + e.message);
     return;
   };
   for (var i = 0, len = data.length; i < len; i++){
@@ -512,9 +521,9 @@ function findParentTasks(data, baseId){
             'ID' : tmp,
             'index': j
           });
+        };
       };
     };
-  };
  } else { //find all parent tasks
    for (var i = 0, len = data.length-1; i < len; i++){
     var tmp = data[i][0].toString() + '_1';
@@ -528,14 +537,14 @@ function findParentTasks(data, baseId){
       };
     };
   };
- };
-  return parentTasks;
+};
+return parentTasks;
 };
 
 
 function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, baseDate){
   Logger.log('sumTwoColumns start');
-  for (var i = 0, len = parentTasks.length; i < len; i++){
+  for (var i = parentTasks.length-1; 0 <= i ; i--){
     var earnedVal = 0;
     var parAry = parentTasks[i]['ID'].toString().split('_');
     var currentIndex = parentTasks[i]['index'];
@@ -557,12 +566,12 @@ function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, ba
             };
           };
           if(isChild){
-            //set 0 if the value is blank
-            data[j][workloadCol] = '' === data[j][workloadCol] ? 0 : data[j][workloadCol];
-            data[j][progressCol] = '' === data[j][progressCol] ? 0 : data[j][progressCol];
+            //set 0 if the value is NaN
+            data[j][workloadCol] = true === isNaN(data[j][workloadCol]) ? 0 : data[j][workloadCol];
+            data[j][progressCol] = true === isNaN(data[j][progressCol]) ? 0 : data[j][progressCol];
 
             data[currentIndex][workloadCol] += parseInt(data[j][workloadCol]);
-            earnedVal += parseInt(data[j][workloadCol]) * parseInt(data[j][progressCol]);
+            earnedVal += data[j][workloadCol] * data[j][progressCol];
           };
         };
       };
@@ -578,7 +587,7 @@ function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, ba
       if(plannedStart.format('YYYY') !== 'Invalid date' && plannedFinish.format('YYYY') !== 'Invalid date'){
         updateChart(data, currentIndex+1, currentIndex+1, progressCol+2, baseDate);
       };
-  };
+    };
   //reflect the exiting formulas
   for(var i = 0, len = formulas.length; i < len; i++){
     for(var j = 0, len2 = formulas[0].length; j < len2; j++){
@@ -615,7 +624,6 @@ function createTaskId(baseData, taskData, taskEndLine, startRow){
       //check there is a brother task
       for(var j = taskPos.row-1; j >= 2; j--){
         if(baseData[j][taskPos.col] !== ''){
-          Logger.log('broVal ' + baseData[j][taskPos.col]);
           broId = taskData[j][0];
           isBro = true;
           break;
@@ -631,7 +639,6 @@ function createTaskId(baseData, taskData, taskEndLine, startRow){
         };
         for(var k = taskPos.col-1; k > 0; k--){
           if(baseData[j][k] !== ''){
-            Logger.log('parentVal ' + baseData[j][k]);
             parId = baseData[j][0];
             isPar = true;
             break label_innerFor;

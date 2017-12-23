@@ -48,49 +48,47 @@ function onEdit(e) {
 
     //nothing happens if you edit the first and second row
     if(editedRow === 1 || editedRow === 2){
-       return;
-    };
+     return;
+   };
 
-    if (selectedItem === 'plannedStart' || selectedItem === 'plannedFinish' || selectedItem === 'actualStart' || selectedItem === 'actualFinish' || selectedItem === 'progress') {
-      Logger.log('Paint the gantt chart');
-      updateChart(baseData, editedRow, lastRow, baseLine, baseDate);
-    };
+   if (selectedItem === 'plannedStart' || selectedItem === 'plannedFinish' || selectedItem === 'actualStart' || selectedItem === 'actualFinish' || selectedItem === 'progress') {
+    Logger.log('start or finish is edited');
+    updateChart(baseData, editedRow, lastRow, baseLine, baseDate);
+  };
 
-    if(selectedItem === 'progress' || selectedItem === 'plannedWorkload'){
-      Logger.log('calculate workload and progress');
-      var indexOfPlannedWorkload = baseData[1].indexOf('plannedWorkload');
-      var indexOfProgress = baseData[1].indexOf('progress');
-      var formulas = baseRange.getFormulas();
-      if(editedRow === lastRow){
-        Logger.log('the number of target is one');
-        var parentTasks = findParentTasks(baseData, baseData[editedRow-1][0]);
-        var newData = sumTwoColumns(baseData, formulas, indexOfPlannedWorkload, indexOfProgress, parentTasks, baseDate);
-        for (var i = 0, len = parentTasks.length; i < len; i++){
-          schedule.getRange(parentTasks[i]['index']+1, indexOfPlannedWorkload+1).setValue(newData[parentTasks[i]['index']][indexOfPlannedWorkload]);
-          schedule.getRange(parentTasks[i]['index']+1, indexOfProgress+1).setValue(newData[parentTasks[i]['index']][indexOfProgress]);
-        };
-      } else {
-        Logger.log('the number of target is more than one');
-        var parentTasks = findParentTasks(baseData);
-        var newData = sumTwoColumns(baseData, formulas, indexOfPlannedWorkload, indexOfProgress, parentTasks, baseDate);
-        baseRange.setValues(newData);
+  if(selectedItem === 'progress' || selectedItem === 'plannedWorkload'){
+    Logger.log('calculate workload and progress');
+    var indexOfPlannedWorkload = baseData[1].indexOf('plannedWorkload');
+    var indexOfProgress = baseData[1].indexOf('progress');
+    var formulas = baseRange.getFormulas();
+    if(editedRow === lastRow){
+      var parentTasks = findParentTasks(baseData, baseData[editedRow-1][0]);
+      var newData = sumTwoColumns(baseData, formulas, indexOfPlannedWorkload, indexOfProgress, parentTasks, baseDate);
+      for (var i = 0, len = parentTasks.length; i < len; i++){
+        schedule.getRange(parentTasks[i]['index']+1, indexOfPlannedWorkload+1).setValue(newData[parentTasks[i]['index']][indexOfPlannedWorkload]);
+        schedule.getRange(parentTasks[i]['index']+1, indexOfProgress+1).setValue(newData[parentTasks[i]['index']][indexOfProgress]);
       };
+    } else {
+      Logger.log('the number of target is more than one');
+      var parentTasks = findParentTasks(baseData);
+      var newData = sumTwoColumns(baseData, formulas, indexOfPlannedWorkload, indexOfProgress, parentTasks, baseDate);
+      baseRange.setValues(newData);
     };
+  };
 
-    if (selectedItem === 'lv1' || selectedItem === 'lv2' || selectedItem === 'lv3' || selectedItem === 'lv4' || selectedItem === 'lv5'){
-      Logger.log('edit taskId');
-      var taskEndLine = baseData[1].indexOf('lv5')+1;
-      var taskRange = schedule.getRange(1, 1, lastRowOfContents, 1);
-      var taskData = taskRange.getValues();
+  if (selectedItem === 'lv1' || selectedItem === 'lv2' || selectedItem === 'lv3' || selectedItem === 'lv4' || selectedItem === 'lv5'){
+    Logger.log('edit taskId');
+    var taskEndLine = baseData[1].indexOf('lv5')+1;
+    var taskRange = schedule.getRange(1, 1, lastRowOfContents, 1);
+    var taskData = taskRange.getValues();
 
-      if(e.range.isBlank()){
-        Logger.log('delete taskId');
-        var isBlank = '';
-        var index = editedRow-1;
-        var len = lastRowOfContents < lastRow ? lastRowOfContents : lastRow;
+    if(e.range.isBlank()){
+      Logger.log('delete taskId');
+      var isBlank = true;
+      var index = editedRow-1;
+      var len = lastRowOfContents < lastRow ? lastRowOfContents : lastRow;
         //don't delete id if there's a value from lv1 to lv5.
         for(i = index; i < len; i++){
-          isBlank = true;
           for (j = 1; j < taskEndLine; j++){
             if(baseData[i][j] != ''){
               isBlank = false;
@@ -108,7 +106,7 @@ function onEdit(e) {
         Logger.log('add taskId');
         var data = createTaskId(baseData, taskData, taskEndLine, editedRow);
         taskRange.setValues(data.taskData);
-        baseData = data.baseData;
+        baseData = data.baseData; //for the function: makeParentBold
       };
       makeParentBold(baseData, baseRange);
     };
@@ -135,10 +133,3 @@ function onEdit(e) {
     };
   };
 };
-
-
-
-
-
-
-
