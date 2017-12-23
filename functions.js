@@ -570,7 +570,7 @@ function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, ba
             data[j][workloadCol] = true === isNaN(data[j][workloadCol]) ? 0 : data[j][workloadCol];
             data[j][progressCol] = true === isNaN(data[j][progressCol]) ? 0 : data[j][progressCol];
 
-            data[currentIndex][workloadCol] += parseInt(data[j][workloadCol]);
+            data[currentIndex][workloadCol] += data[j][workloadCol];
             earnedVal += data[j][workloadCol] * data[j][progressCol];
           };
         };
