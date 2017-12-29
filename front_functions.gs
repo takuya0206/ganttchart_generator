@@ -1,5 +1,7 @@
+
 function front_updateChart(){
   Logger.log('front_updateChart start')
+  var schedule = getScheduleSheet();
   var memo = PropertiesService.getDocumentProperties();
   var baseLine = findStartPoint('progress')+1;
   var baseDate = Moment.moment(memo.getProperty('baseDate'));
@@ -12,6 +14,7 @@ function front_updateChart(){
 
 function front_sumAllWnP(){
   Logger.log('front_sumAllWnP start');
+  var schedule = getScheduleSheet();
   var memo = PropertiesService.getDocumentProperties();
   var lastRowOfContents = schedule.getLastRow();
   var baseLine = findStartPoint('progress')+1;
@@ -77,7 +80,3 @@ function get_colorIndicator(){
   isChecked = isChecked === null ? false : isChecked;
   return isChecked;
 };
-
-
-
-

@@ -1,3 +1,4 @@
+
 function showSidebar() {
   Logger.log('showSidebar start');
   var html = HtmlService.createHtmlOutputFromFile('Page')
@@ -9,19 +10,30 @@ function showSidebar() {
 
 function createChart(){
   Logger.log('createChart start');
+  var schedule = getScheduleSheet();
+  var holiday = getHolidaySheet();
+  var ss = getSpreadSheet();
   var memo = PropertiesService.getDocumentProperties();
-  var schedule = ss.getSheetByName('schedule');
-  var holiday = ss.getSheetByName('holiday');
-  if(!schedule){schedule = ss.insertSheet('schedule', 1);}
-  if(!holiday){holiday = ss.insertSheet('holiday', 2);}
-  var lang = memo.getProperty('lang');
-  var text = lang === 'ja' ? 'ガントチャートの作成を行いますか？' : 'Will you create a gantt chart?';
-  resetAll(text);
+  if(!schedule){
+    var lang = memo.getProperty('lang');
+    var text = lang === 'ja' ? 'ガントチャートの作成を行いますか？' : 'Will you create a gantt chart?';
+    schedule = ss.insertSheet('schedule', 1);
+    if(!holiday){holiday = ss.insertSheet('holiday', 2);};
+    resetAll(text);
+  } else {
+    var lang = memo.getProperty('lang');
+    var text = lang === 'ja' ? '既にscheduleシートが存在しています。新たに作成をするとこれまでの内容が削除されますがよろしいですか？' : 'You already have the schedule sheet. Please confirm that the existing contents will be deleted if you create a new gantt chart.';
+    if(!holiday){holiday = ss.insertSheet('holiday', 2);};
+    resetAll(text);
+  };
 };
 
 
 function resetAll(msg){
   Logger.log('resetAll start');
+  var ss = getSpreadSheet();
+  var schedule = getScheduleSheet();
+  var holiday = getHolidaySheet();
   var isComfirmed = Browser.msgBox(msg, Browser.Buttons.YES_NO);
   if(isComfirmed === 'yes'){
     if(!schedule){schedule = ss.insertSheet('schedule', 1);}
@@ -46,6 +58,8 @@ function resetAll(msg){
 function init(){
   Logger.log('init start');
   //template for items
+  var schedule = getScheduleSheet();
+  var holiday = getHolidaySheet();
   var memo = PropertiesService.getDocumentProperties();
   var lang = memo.getProperty('lang');
   var scheduleItems = lang === 'ja' ? [['タスクID', '階層別 タスク一覧','','','','', '予定開始', '予定終了', '実際開始', '実際終了', '工数\n（予｜実）','', '担当', '進捗'],  
@@ -108,6 +122,7 @@ function init(){
 
 function setDailyTiggers(){
   Logger.log('setDailyTiggers start');
+  var ss = getSpreadSheet();
   //GAS-based function
   function createTimeDrivenTriggers() {
     ScriptApp.newTrigger('front_updateChart')
@@ -136,6 +151,7 @@ function setDailyTiggers(){
 
 function updateChart(data, startRow, endRow, baseLine, baseDate){
   Logger.log('updateChart start');
+  var schedule = getScheduleSheet();
   var indexOfPlannedStart = data[1].indexOf('plannedStart');
   var indexOfPlannedFinish = data[1].indexOf('plannedFinish');
   var indexOfActualStart = data[1].indexOf('actualStart');
@@ -207,6 +223,7 @@ function showDateErrorMsg(row){
 
 function copyDefaultRow(top, left, height, width, option){
   Logger.log('copyDefaultRow start');
+  var schedule = getScheduleSheet();
   var range = schedule.getRange(2, left, 1, width);
   if (!option){
     range.copyTo(schedule.getRange(top, left, height, width));
@@ -218,6 +235,7 @@ function copyDefaultRow(top, left, height, width, option){
 
 function setMilestone(top, baseLine, baseDate, startDate, finishDate, color, columnNum){
   Logger.log('setMilestone start');
+  var schedule = getScheduleSheet();
   var chartFinish = baseLine + finishDate.diff(baseDate, 'days');
   if (chartFinish >= baseLine && chartFinish <= columnNum){
     schedule.getRange(top, chartFinish).setBackground(color);
@@ -251,6 +269,7 @@ function judgeColor(start, finish, progress){
 
 function paintChart(top, baseLine, baseDate, startDate, finishDate, color, columnNum){
   Logger.log('paintChart start');
+  var schedule = getScheduleSheet();
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
   var duration = finishDate.diff(startDate, 'days')+1;
   if(chartStart < baseLine){
@@ -305,6 +324,7 @@ function checkOverlap(firstStart, firstFinish, secondStart, secondFinish) {
 
 function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
   Logger.log('markProgress start');
+  var schedule = getScheduleSheet();
   var columnNum = schedule.getMaxColumns();
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
   var duration = finishDate.diff(startDate, 'days')+1;
@@ -352,6 +372,7 @@ function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
 
 function drawTodayLine() {
  Logger.log('drawTodayLine start');
+ var schedule = getScheduleSheet();
  var memo = PropertiesService.getDocumentProperties();
  var today = Moment.moment();
  var baseLine = findStartPoint('progress')+1;
@@ -395,6 +416,7 @@ function drawTodayLine() {
 
 function findStartPoint(text) {
   Logger.log('findStartPoint start');
+  var schedule = getScheduleSheet();
   var ary = schedule.getRange('2:2').getValues();
   if (ary[0].indexOf(text) < 0) {
     Browser.msgBox('System Error: Please initalize your gantt chart.');
@@ -407,6 +429,7 @@ function findStartPoint(text) {
 
 function setHolidays(data){
   Logger.log('setHolidays start');
+  var holiday = getHolidaySheet();
   var range = holiday.getRange(1, 1, data.length, data[0].length);
   range.setValues(data);
 };
@@ -435,6 +458,7 @@ function getHolidays(){
 
 function formatGantchart(span, date) {
   Logger.log('formatGantchart');
+  var schedule = getScheduleSheet();
   var memo = PropertiesService.getDocumentProperties();
   var baseLine = findStartPoint('progress')+1;
   var date = Moment.moment(date);
@@ -471,6 +495,7 @@ function formatGantchart(span, date) {
 
 function adjustColums(baseLine, num, width, rowNum, columnNum){
   Logger.log('adjustColums start');
+  var schedule = getScheduleSheet();
   var deleteNum = columnNum - baseLine;
   schedule.setColumnWidth(baseLine, width);
   schedule.getRange(1, baseLine, rowNum, 1).clearContent();
@@ -483,6 +508,7 @@ function adjustColums(baseLine, num, width, rowNum, columnNum){
 function paintWeekdays(baseLine, span, color, rowNum, columnNum){
   Logger.log('paintWeekdays start');
   var wkendStart = 5;
+  var schedule = getScheduleSheet();
   var range = schedule.getRange(1, baseLine, rowNum+1, span);
   range.setBorder(null, true, null, true, false, false, "black", SpreadsheetApp.BorderStyle.SOLID);
   schedule.getRange(2, baseLine+wkendStart, rowNum-2+1, 2).setBackground(color);
@@ -492,6 +518,8 @@ function paintWeekdays(baseLine, span, color, rowNum, columnNum){
 
 function paintHolidays(baseLine, date, color, rowNum, columnNum){
   Logger.log('paintHolidays start');
+  var schedule = getScheduleSheet();
+  var holiday = getHolidaySheet();
   try{
     var data = holiday.getRange(1, 1, holiday.getLastRow(), 1).getValues();
   }
@@ -544,6 +572,7 @@ return parentTasks;
 
 function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, baseDate){
   Logger.log('sumTwoColumns start');
+  var schedule = getScheduleSheet();
   for (var i = parentTasks.length-1; 0 <= i ; i--){
     var earnedVal = 0;
     var parAry = parentTasks[i]['ID'].toString().split('_');

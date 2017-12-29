@@ -108,7 +108,7 @@
     var textInquire = lang === 'ja' ? '問い合せ' : 'Inquire';
     var textHowto = lang === 'ja' ? '使い方' : 'How to Use';
     var linkInquire = 'https://goo.gl/forms/wIVNPWzGOUtbT6ot2';
-    var linkHowto = lang === 'ja' ? 'https://www.google.co.jp' : 'https://www.google.com';
+    var linkHowto = lang === 'ja' ? 'http://takuya0206.hateblo.jp/entry/ganttchart_generator' : 'https://github.com/takuya0206/ganttchart_generator';
     var textTitle = lang === 'ja' ? 'ガントチャートの操作' : 'Edit Gantt Chart';
     var textSetStart = lang === 'ja' ? 'ガントチャートの開始日を変更' : 'Change Start Date';
     var textRecal = lang === 'ja' ? '工数（予）と進捗の再計算' : 'Recalculate Planned Workload & Progress';
@@ -139,7 +139,7 @@
       $(this).val(textButton);
     });
 
-    //makr check box
+    //mark check box
     google.script.run
     .withSuccessHandler(markCbox)
     .get_colorIndicator();

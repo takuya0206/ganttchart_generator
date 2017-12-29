@@ -2,36 +2,58 @@
 // Moment.js  = key : MHMchiX6c1bwSqGM1PZiW_PxhMjh3Sh48
 
 Logger.log('Google Apps Script on...');
-var ss = SpreadsheetApp.getActive();
-var schedule = ss.getSheetByName('schedule');
-var holiday = ss.getSheetByName('holiday');
+Logger.log(ScriptApp.AuthMode);
+
+
+//Sheet API
+function getSpreadSheet(){
+  if(getSpreadSheet.ss){return getSpreadSheet.ss; };
+  getSpreadSheet.ss = SpreadsheetApp.getActive();
+  return getSpreadSheet.ss;
+};
+
+function getScheduleSheet(){
+  var ss = getSpreadSheet();
+  if(getScheduleSheet.s_sheet){return getScheduleSheet.s_sheet; };
+  getScheduleSheet.s_sheet = ss.getSheetByName('schedule');
+  return getScheduleSheet.s_sheet;
+}
+
+function getHolidaySheet(){
+  var ss = getSpreadSheet();
+  if(getScheduleSheet.h_sheet){return getScheduleSheet.h_sheet;};
+  getHolidaySheet.h_sheet = ss.getSheetByName('holiday');
+  return getHolidaySheet.h_sheet;
+}
 
 
 function onInstall(e) {
   onOpen(e);
 }
 
-function onOpen(e) {
-  var memo = PropertiesService.getDocumentProperties();
-  var lang = Session.getActiveUserLocale();
-  memo.setProperty('lang', lang);
-  var menu = SpreadsheetApp.getUi().createAddonMenu();
-  var sidebar_text = lang === 'ja' ? 'サイドバーの表示' : 'Show Sidebar';
-  var createChart_text = lang === 'ja' ? 'ガントチャートの作成' : 'Create Gantt Chart';
 
-  if (e && e.authMode === ScriptApp.AuthMode.NONE) {
-    menu.addItem(sidebar_text, 'showSidebar');
-    showSidebar();
+function onOpen(e) {
+  Logger.log('AuthMode: ' + e.authMode);
+  var menu = SpreadsheetApp.getUi().createAddonMenu();
+  if(e && e.authMode === ScriptApp.AuthMode.NONE){
+    menu.addItem('Getting Started', 'createChart');
   } else {
+    var memo = PropertiesService.getDocumentProperties();
+    var lang = Session.getActiveUserLocale();
+    memo.setProperty('lang', lang);
+    var sidebar_text = lang === 'ja' ? 'サイドバーの表示' : 'Show Sidebar';
+    var createChart_text = lang === 'ja' ? 'ガントチャートの作成' : 'Create Gantt Chart';
     menu.addItem(createChart_text, 'createChart');
-//    menu.addItem(sidebar_text, 'showSidebar');
-};
-menu.addToUi();
+    menu.addItem(sidebar_text, 'showSidebar');
+  };
+  menu.addToUi();
 };
 
 
 function onEdit(e) {
   Logger.log('onEdit start');
+  var schedule = getScheduleSheet();
+  var holiday = getHolidaySheet();
   if (e.source.getActiveSheet().getName() == 'schedule') {
     Logger.log('for the schedule sheet');
     var memo = PropertiesService.getDocumentProperties();
