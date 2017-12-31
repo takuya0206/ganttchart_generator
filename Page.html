@@ -111,7 +111,7 @@
     var linkHowto = lang === 'ja' ? 'http://takuya0206.hateblo.jp/entry/ganttchart_generator' : 'https://github.com/takuya0206/ganttchart_generator';
     var textTitle = lang === 'ja' ? 'ガントチャートの操作' : 'Edit Gantt Chart';
     var textSetStart = lang === 'ja' ? 'ガントチャートの開始日を変更' : 'Change Start Date';
-    var textRecal = lang === 'ja' ? '工数（予）と進捗の再計算' : 'Recalculate Planned Workload & Progress';
+    var textRecal = lang === 'ja' ? '工数（予）と進捗の再計算' : 'Recalculate Workload (plan) & Progress';
     var textRedo = lang === 'ja' ? 'ガントチャートの再色塗り' : 'Repaint Gantt Chart';
     var textReset = lang === 'ja' ? 'ガンチャートの初期化' : 'Initalize Gantt Chart';
     var textButton = lang === 'ja' ? '実行' : 'Done';
@@ -194,8 +194,11 @@
 
  $('#cbox').change(function(){
    var isChecked = $('#cbox').is(':checked');
-
-   google.script.run.colorIndicator(isChecked);
+   startWait();
+   google.script.run
+   .withSuccessHandler(successMsg)
+   .withFailureHandler(errorMsg)
+   .colorIndicator(isChecked);
  });
 
 

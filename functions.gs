@@ -1,4 +1,36 @@
 
+function getSpreadSheet(){
+  if(getSpreadSheet.ss){return getSpreadSheet.ss; };
+  getSpreadSheet.ss = SpreadsheetApp.getActive();
+  return getSpreadSheet.ss;
+};
+
+
+function getScheduleSheet(){
+  var ss = getSpreadSheet();
+  if(getScheduleSheet.s_sheet){return getScheduleSheet.s_sheet; };
+  getScheduleSheet.s_sheet = ss.getSheetByName('schedule');
+  return getScheduleSheet.s_sheet;
+};
+
+
+function getHolidaySheet(){
+  var ss = getSpreadSheet();
+  if(getScheduleSheet.h_sheet){return getScheduleSheet.h_sheet;};
+  getHolidaySheet.h_sheet = ss.getSheetByName('holiday');
+  return getHolidaySheet.h_sheet;
+};
+
+
+function askEnabled(){
+  var lang = Session.getActiveUserLocale();
+  var title = 'Gantt Chart Generator';
+  var msg = lang === 'ja' ? 'Gantt Chart Generatorが有効になりました。もしアドオンのメニューに「ガントチャートの作成」が表示されていない場合は一度リロードをお願いします。' : 'Gantt Chart Generator has been enabled. Just in case that the menu: "Create Gantt Chart" does not appear, please reload this spreadsheet.';
+  var ui = SpreadsheetApp.getUi();
+  ui.alert(title, msg, ui.ButtonSet.OK);
+};
+
+
 function showSidebar() {
   Logger.log('showSidebar start');
   var html = HtmlService.createHtmlOutputFromFile('Page')
@@ -14,20 +46,28 @@ function createChart(){
   var holiday = getHolidaySheet();
   var ss = getSpreadSheet();
   var memo = PropertiesService.getDocumentProperties();
+  if(!holiday){
+    try{
+      ss.insertSheet('holiday', 2);
+    } catch(e){
+      Logger.log(e.message);
+    };
+  };
   if(!schedule){
     var lang = memo.getProperty('lang');
     var text = lang === 'ja' ? 'ガントチャートの作成を行いますか？' : 'Will you create a gantt chart?';
-    schedule = ss.insertSheet('schedule', 1);
-    if(!holiday){holiday = ss.insertSheet('holiday', 2);};
+    try{
+      ss.insertSheet('schedule', 1);
+    } catch(e){
+      Logger.log(e.message);
+    };
     resetAll(text);
   } else {
     var lang = memo.getProperty('lang');
     var text = lang === 'ja' ? '既にscheduleシートが存在しています。新たに作成をするとこれまでの内容が削除されますがよろしいですか？' : 'You already have the schedule sheet. Please confirm that the existing contents will be deleted if you create a new gantt chart.';
-    if(!holiday){holiday = ss.insertSheet('holiday', 2);};
     resetAll(text);
-  };
+    };
 };
-
 
 function resetAll(msg){
   Logger.log('resetAll start');
@@ -36,8 +76,6 @@ function resetAll(msg){
   var holiday = getHolidaySheet();
   var isComfirmed = Browser.msgBox(msg, Browser.Buttons.YES_NO);
   if(isComfirmed === 'yes'){
-    if(!schedule){schedule = ss.insertSheet('schedule', 1);}
-    if(!holiday){holiday = ss.insertSheet('holiday', 2);}
     schedule.clear();
     holiday.clear();
     init();
@@ -69,8 +107,8 @@ function init(){
   ['id', 'lv1','lv2','lv3','lv4','lv5','plannedStart', 'plannedFinish', 'actualStart', 'actualFinish', 'plannedWorkload', 'actualWorkload', 'responsiblity', 'progress']
   ];
   var note = lang === 'ja' ? '手動で祝日を編集するときは、必ず日付をA列に入力してください。': 'The default holidays are based on Japanese calendar. When editing holidays, please set date in the A column.';
-  var format = lang === 'ja' ? 'YYYY/MM/DD' : 'MMM Do YY';
-  var cellformat = lang === 'ja' ? 'yyyy/mm/dd':  'MMM d yyyy';
+  var format = lang === 'ja' ? 'YYYY/MM/DD' : 'MMM-Do-YY';
+  var cellformat = lang === 'ja' ? 'yyyy/mm/dd':  'MMM-d-yyyy';
   var scheduleItemsLength = scheduleItems[0].length;
   var firstRow = schedule.getRange('1:1');
   var range = schedule.getRange(1, 1, 2, scheduleItemsLength);
@@ -130,13 +168,8 @@ function setDailyTiggers(){
     .atHour(0)
     .everyDays(1)
     .create();
-
-    ScriptApp.newTrigger('drawTodayLine')
-    .timeBased()
-    .atHour(0)
-    .everyDays(1)
-    .create();
   };
+
   //delete exiting triggers
   var triggers = ScriptApp.getUserTriggers(ss);
   for (var i = 0, len = triggers.length; i < len; i++){
@@ -214,6 +247,7 @@ function updateChart(data, startRow, endRow, baseLine, baseDate){
 function showDateErrorMsg(row){
   Logger.log('showDateErrorMsg start');
   var memo = PropertiesService.getDocumentProperties();
+  var schedule = getScheduleSheet();
   var lang = memo.getProperty('lang');
   var text = lang === 'ja' ? '開始が終了よりも大きな値です。' : 'The start date is bigger than the finish date.';
   Browser.msgBox('System Error (ID ' + schedule.getRange(row, 1).getValue() + ') : ' + text);
@@ -271,7 +305,7 @@ function paintChart(top, baseLine, baseDate, startDate, finishDate, color, colum
   Logger.log('paintChart start');
   var schedule = getScheduleSheet();
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
-  var duration = finishDate.diff(startDate, 'days')+1;
+  var duration = finishDate.diff(startDate, 'days')+1;  
   if(chartStart < baseLine){
     duration -= baseLine-chartStart;
     if(duration <= 0){
@@ -293,7 +327,7 @@ function paintChart(top, baseLine, baseDate, startDate, finishDate, color, colum
     };
   };
   if (chartStart >= baseLine){
-    if (chartStart+duration > columnNum-baseLine+1) {
+    if (chartStart+duration > columnNum-baseLine+1) {    
       try{
         schedule.getRange(top, chartStart, 1, columnNum-chartStart+1).setBackground(color);
       } catch(e){
@@ -466,7 +500,7 @@ function formatGantchart(span, date) {
   var chartWidth = 168;
   var rowNum = schedule.getMaxRows();
   var columnNum = schedule.getMaxColumns();
-  memo.setProperty('baseDate', date.format(format));
+  memo.setProperty('baseDate', date.format('YYYY/MM/DD'));
   //The number and the width of rows
   adjustColums(baseLine, chartWidth, 25, rowNum, columnNum);
   columnNum = schedule.getMaxColumns();

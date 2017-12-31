@@ -10,6 +10,7 @@ function front_updateChart(){
   var data = schedule.getRange(1, 1, endRow, baseLine-1).getValues();
   if(startRow > endRow){return;}; //No contents
   updateChart(data, startRow, endRow, baseLine, baseDate);
+  drawTodayLine();
 };
 
 function front_sumAllWnP(){
