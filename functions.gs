@@ -100,7 +100,7 @@ function init(){
   var holiday = getHolidaySheet();
   var memo = PropertiesService.getDocumentProperties();
   var lang = memo.getProperty('lang');
-  var scheduleItems = lang === 'ja' ? [['タスクID', '階層別 タスク一覧','','','','', '予定開始', '予定終了', '実際開始', '実際終了', '工数\n（予｜実）','', '担当', '進捗'],  
+  var scheduleItems = lang === 'ja' ? [['タスクID', '階層別 タスク一覧','','','','', '予定開始', '予定終了', '実際開始', '実際終了', '工数\n（予｜実）','', '担当', '進捗'],
   ['id', 'lv1','lv2','lv3','lv4','lv5','plannedStart', 'plannedFinish', 'actualStart', 'actualFinish', 'plannedWorkload', 'actualWorkload', 'responsiblity', 'progress']
   ] :
   [['Task ID', 'Work Breakdown Structure','','','','', 'Planned Start', 'Planned Finish', 'Actual Start', 'Actual Finish', 'Workload\n（Plan｜Actual）','', 'In Charge', 'Progress'],
@@ -174,7 +174,7 @@ function setDailyTiggers(){
   var triggers = ScriptApp.getUserTriggers(ss);
   for (var i = 0, len = triggers.length; i < len; i++){
     var tmp = triggers[i].getHandlerFunction();
-    if(tmp === 'front_updateChart' || tmp === 'drawTodayLine'){
+    if(tmp === 'front_updateChart'){
       ScriptApp.deleteTrigger(triggers[i]);
     };
   };
@@ -305,7 +305,7 @@ function paintChart(top, baseLine, baseDate, startDate, finishDate, color, colum
   Logger.log('paintChart start');
   var schedule = getScheduleSheet();
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
-  var duration = finishDate.diff(startDate, 'days')+1;  
+  var duration = finishDate.diff(startDate, 'days')+1;
   if(chartStart < baseLine){
     duration -= baseLine-chartStart;
     if(duration <= 0){
@@ -316,9 +316,9 @@ function paintChart(top, baseLine, baseDate, startDate, finishDate, color, colum
           schedule.getRange(top, baseLine, 1, columnNum-baseLine+1).setBackground(color);
         } catch(e){
           Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
-        }; 
+        };
       } else {
-        try{ 
+        try{
           schedule.getRange(top, baseLine, 1, duration).setBackground(color);
         } catch(e){
           Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
@@ -327,7 +327,7 @@ function paintChart(top, baseLine, baseDate, startDate, finishDate, color, colum
     };
   };
   if (chartStart >= baseLine){
-    if (chartStart+duration > columnNum-baseLine+1) {    
+    if (chartStart+duration > columnNum-baseLine+1) {
       try{
         schedule.getRange(top, chartStart, 1, columnNum-chartStart+1).setBackground(color);
       } catch(e){

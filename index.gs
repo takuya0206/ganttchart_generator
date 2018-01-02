@@ -1,31 +1,12 @@
-// Library
-// Moment.js  = key : MHMchiX6c1bwSqGM1PZiW_PxhMjh3Sh48
+/** Library
+ * Moment.js  = key : MHMchiX6c1bwSqGM1PZiW_PxhMjh3Sh48
+ */
+/**
+ * @OnlyCurrentDoc
+ */
+
 
 Logger.log('Google Apps Script on...');
-Logger.log(ScriptApp.AuthMode);
-
-
-//Sheet API
-function getSpreadSheet(){
-  if(getSpreadSheet.ss){return getSpreadSheet.ss; };
-  getSpreadSheet.ss = SpreadsheetApp.getActive();
-  return getSpreadSheet.ss;
-};
-
-function getScheduleSheet(){
-  var ss = getSpreadSheet();
-  if(getScheduleSheet.s_sheet){return getScheduleSheet.s_sheet; };
-  getScheduleSheet.s_sheet = ss.getSheetByName('schedule');
-  return getScheduleSheet.s_sheet;
-}
-
-function getHolidaySheet(){
-  var ss = getSpreadSheet();
-  if(getScheduleSheet.h_sheet){return getScheduleSheet.h_sheet;};
-  getHolidaySheet.h_sheet = ss.getSheetByName('holiday');
-  return getHolidaySheet.h_sheet;
-}
-
 
 function onInstall(e) {
   onOpen(e);
@@ -35,8 +16,8 @@ function onInstall(e) {
 function onOpen(e) {
   Logger.log('AuthMode: ' + e.authMode);
   var menu = SpreadsheetApp.getUi().createAddonMenu();
-  if(e && e.authMode === ScriptApp.AuthMode.NONE){
-    menu.addItem('Getting Started', 'createChart');
+  if(e && e.authMode == 'NONE'){
+    menu.addItem('Getting Started', 'askEnabled');
   } else {
     var memo = PropertiesService.getDocumentProperties();
     var lang = Session.getActiveUserLocale();
@@ -64,7 +45,7 @@ function onEdit(e) {
     var lastRowOfContents = schedule.getLastRow();
     var selectedItem = schedule.getRange(2, editedColumn).getValue();
     var baseLine = findStartPoint('progress')+1;
-    var baseDate = Moment.moment(memo.getProperty('baseDate'));
+    var baseDate = memo.getProperty('baseDate');
     var baseRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
     var baseData = baseRange.getValues();
 
@@ -154,4 +135,5 @@ function onEdit(e) {
       formatGantchart(7, baseDate);
     };
   };
+
 };
