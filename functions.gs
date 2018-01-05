@@ -630,8 +630,8 @@ function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, ba
           };
           if(isChild){
             //set 0 if the value is NaN
-            data[j][workloadCol] = true === isNaN(data[j][workloadCol]) ? 0 : data[j][workloadCol];
-            data[j][progressCol] = true === isNaN(data[j][progressCol]) ? 0 : data[j][progressCol];
+            data[j][workloadCol] = false === isNum(data[j][workloadCol]) ? 0 : data[j][workloadCol];
+            data[j][progressCol] = false === isNum(data[j][progressCol]) ? 0 : data[j][progressCol];
 
             data[currentIndex][workloadCol] += data[j][workloadCol];
             earnedVal += data[j][workloadCol] * data[j][progressCol];
@@ -639,7 +639,7 @@ function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, ba
         };
       };
       //handle "0 divided by 0 equal error"
-      if(earnedVal === 0 && data[currentIndex][workloadCol] === 0){
+      if(earnedVal == 0 && data[currentIndex][workloadCol] == 0){
         data[currentIndex][progressCol] = 0;
       } else {
         data[currentIndex][progressCol] = earnedVal / data[currentIndex][workloadCol];
@@ -662,6 +662,17 @@ function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, ba
   return data;
 };
 
+
+function isNum(val){
+  val = String(val).replace(/^[ 　]+|[ 　]+$/g, '');
+  if(val.length == 0){
+    return false;
+  };
+  if(isNaN(val) || !isFinite(val)){
+    return false;
+  };
+  return true;
+};
 
 function createTaskId(baseData, taskData, taskEndLine, startRow){
   Logger.log('createTaskId start');
