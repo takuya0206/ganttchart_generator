@@ -334,7 +334,6 @@ function paintChart(top, baseLine, baseDate, startDate, finishDate, color, colum
         Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
       };
     } else {
-      Logger.log('列より短い');
       try{
         schedule.getRange(top, chartStart, 1, duration).setBackground(color);
       } catch(e){
@@ -356,22 +355,21 @@ function checkOverlap(firstStart, firstFinish, secondStart, secondFinish) {
  };
 };
 
-
 function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
   Logger.log('markProgress start');
   var schedule = getScheduleSheet();
   var columnNum = schedule.getMaxColumns();
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
   var duration = finishDate.diff(startDate, 'days')+1;
-  duration = columnNum-baseLine+1 > duration-(baseLine-chartStart) ? duration-(baseLine-chartStart) : columnNum-baseLine+1;
-  var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
-  Logger.log('markLength:' + markLength);
-  Logger.log('duration' + duration)
   if(chartStart < baseLine){
-    Logger.log('chartStart < baseLine');
+    duration = columnNum-baseLine+1 > duration-(baseLine-chartStart) ? duration-(baseLine-chartStart) : columnNum-baseLine+1;
+    Logger.log('duration:' + duration);
     if(duration <= 0){
       return;
     } else {
+      if(baseLine+duration < columnNum-baseLine+1){
+        var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
+        Logger.log('markLength:' + markLength);
         if(markLength === 0){return;}
         var progressLine = [];
         progressLine.push([]);
@@ -383,10 +381,13 @@ function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
         } catch(e){
           Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
         };
+      };
     };
   };
   if (chartStart >= baseLine){
-    Logger.log('chartStart >= baseLine');
+    var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
+    Logger.log('duration:' + duration);
+    Logger.log('markLength:' + markLength);
     if(markLength === 0){return;}
     var progressLine = [];
     progressLine.push([]);
