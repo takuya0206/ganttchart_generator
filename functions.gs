@@ -69,6 +69,7 @@ function createChart(){
     };
 };
 
+
 function resetAll(msg){
   Logger.log('resetAll start');
   var ss = getSpreadSheet();
@@ -89,6 +90,7 @@ function resetAll(msg){
     };
     var monday = date.add(tmp, 'days');
     formatGantchart(7, monday.format('YYYY/MM/DD'));
+    makeSampleTask(monday);
   };
 };
 
@@ -180,6 +182,18 @@ function setDailyTiggers(){
   };
   createTimeDrivenTriggers();
 };
+
+
+function makeSampleTask(date){
+  Logger.log('makeSampleTask start')
+  date = Moment.moment(date);
+  var schedule = getScheduleSheet();
+  var memo = PropertiesService.getDocumentProperties();
+  var range = schedule.getRange(4, 1, 1, 14);
+  range.setValues([['1', 'Sample Task','','','','', date.format(memo.getProperty('format')), date.add(5, 'days').format(memo.getProperty('format')), '','' , 10,'','' , 1]])
+  front_updateChart();
+};
+
 
 
 function updateChart(data, startRow, endRow, baseLine, baseDate){
@@ -470,20 +484,22 @@ function setHolidays(data){
 
 function getHolidays(){
   Logger.log('getHolidays start');
-  //from 1st Jan in the current year
-  var startDate = new Date();
+  var values = [];
+  var startDate = new Date();//from 1st Jan in the current year
   startDate.setMonth(0, 1);
   startDate.setHours(0, 0, 0, 0);
-  //until 31st Dec in the next year
-  var endDate = new Date();
+  var endDate = new Date();//until 31st Dec in the next year
   endDate.setFullYear(endDate.getFullYear()+1, 11, 31);
   endDate.setHours(0, 0, 0, 0);
   //Japanese holidays
   var calendar = CalendarApp.getCalendarById("ja.japanese#holiday@group.v.calendar.google.com");
-  var holidays = calendar.getEvents(startDate, endDate);
-  var values = [];
-  for(var i = 0; i < holidays.length; i++) {
-    values[i] = [holidays[i].getStartTime(), holidays[i].getTitle()];
+  if(!calendar){
+    values[0] = [startDate, 'Sample Holiday']
+  } else {
+    var holidays = calendar.getEvents(startDate, endDate);
+    for(var i = 0; i < holidays.length; i++) {
+      values[i] = [holidays[i].getStartTime(), holidays[i].getTitle()];
+    };
   };
   return values;
 };
