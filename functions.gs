@@ -108,7 +108,7 @@ function init(){
   [['Task ID', 'Work Breakdown Structure','','','','', 'Planned Start', 'Planned Finish', 'Actual Start', 'Actual Finish', 'Workload\n（Plan｜Actual）','', 'In Charge', 'Progress'],
   ['id', 'lv1','lv2','lv3','lv4','lv5','plannedStart', 'plannedFinish', 'actualStart', 'actualFinish', 'plannedWorkload', 'actualWorkload', 'responsiblity', 'progress']
   ];
-  var note = lang === 'ja' ? '手動で祝日を編集するときは、必ず日付をA列に入力してください。': 'The default holidays are based on Japanese calendar. When editing holidays, please set date in the A column.';
+  var note = lang === 'ja' ? '手動で祝日を編集するときは、必ず日付をA列に入力してください。': 'When editing holidays, please set date only in the A column.';
   var format = lang === 'ja' ? 'YYYY/MM/DD' : 'MMM-Do-YY';
   var cellformat = lang === 'ja' ? 'yyyy/mm/dd':  'MMM-d-yyyy';
   var scheduleItemsLength = scheduleItems[0].length;
