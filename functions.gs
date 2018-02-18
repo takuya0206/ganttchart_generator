@@ -1,4 +1,3 @@
-
 function getSpreadSheet(){
   if(getSpreadSheet.ss){return getSpreadSheet.ss; };
   getSpreadSheet.ss = SpreadsheetApp.getActive();

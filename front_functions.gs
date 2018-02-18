@@ -104,11 +104,13 @@ function front_showParentBar(isChecked){
     var newData = makeParentBar(baseData, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine);
     baseRange.setValues(newData);
   } else {//delete all parents' bars
-    //delete date in the data
+    //delete date and color in the data
+    var indexOfProgress = baseData[1].indexOf('progress');
     for (var i = parentTasks.length-1; 0 <= i ; i--){
       baseData[parentTasks[i]['index']][indexOfPlannedStart] = '';
       baseData[parentTasks[i]['index']][indexOfPlannedFinish] = '';
     };
+    schedule.getRange(3, indexOfProgress+1, lastRowOfContents-3+1, 1).setBackground(''); //delete the color in the progress column
     updateChart(baseData, 3, lastRowOfContents, baseLine, baseDate, parentTasks);
     //reflect the exiting formulas
     for(var i = 0, len = formulas.length; i < len; i++){
