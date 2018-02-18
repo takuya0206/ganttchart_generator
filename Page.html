@@ -70,8 +70,12 @@
 
     <br />
     <div>
-      <input type="checkbox" id="cbox">
-      <label id="cbox_label" for="checkbox"></label>
+      <input type="checkbox" id="cbox_colorIndicator">
+      <label id="cbox_label_colorIndicator" for="checkbox"></label>
+    </div>
+    <div>
+      <input type="checkbox" id="cbox_parentBar">
+      <label id="cbox_label_parentBar" for="checkbox"></label>
     </div>
     <br />
     <div class="block form-group">
@@ -115,7 +119,8 @@
     var textButton = lang === 'ja' ? '実行' : 'Done';
     var textMonday = lang === 'ja' ? '月曜日を設定してください。' : 'Start date should be Monday.'
     var textConfirm = lang === 'ja' ? '全てのデータが削除されます。よろしいでしょうか？' : 'Please confirm. All of the data will be deleted.'
-    var textCbox = lang === 'ja' ? '進捗別の色表記' : 'Color Indication';
+    var textCbox_colorIndicator = lang === 'ja' ? '進捗別の色表記' : 'Show Color Indication';
+    var textCbox_parentBar = lang === 'ja' ? '親タスクのバーを自動表示' : 'Show Parents\' Bar';
 
     $('#Donation').text(textDonation);
     $('#Inquire').text(textInquire);
@@ -127,7 +132,8 @@
     $('#Recal').text(textRecal);
     $('#Redo').text(textRedo);
     $('#Reset').text(textReset);
-    $('#cbox_label').text(textCbox);
+    $('#cbox_label_colorIndicator').text(textCbox_colorIndicator);
+    $('#cbox_label_parentBar').text(textCbox_parentBar);
 
     $('.action').each(function(){
       $(this).val(textButton);
@@ -139,68 +145,93 @@
 
     //mark check box
     google.script.run
-    .withSuccessHandler(markCbox)
+    .withSuccessHandler(markCbox_colorIndicator)
     .get_colorIndicator();
 
-    function markCbox(data){
+    google.script.run
+    .withSuccessHandler(markCbox_colorIndicator)
+    .get_ParentBar();
+
+    function markCbox_colorIndicator(data){
       if(data == 'true'){
-       $('#cbox').prop('checked', true);
+       $('#cbox_colorIndicator').prop('checked', true);
      } else {
-       $('#cbox').prop('checked', false);
+       $('#cbox_colorIndicator').prop('checked', false);
      };
    };
 
-   function send_reset(){
-    startWait();
-    google.script.run
-    .withSuccessHandler(successMsg)
-    .withFailureHandler(errorMsg)
-    .resetAll(textConfirm);
-  };
-
-  function send_redo(){
-    startWait();
-    google.script.run
-    .withSuccessHandler(successMsg)
-    .withFailureHandler(errorMsg)
-    .front_updateChart();
-  };
-
-  function send_recalculate(){
-    startWait();
-    google.script.run
-    .withSuccessHandler(successMsg)
-    .withFailureHandler(errorMsg)
-    .front_sumAllWnP();
-  };
-
-
-  function send_setStartDate(){
-    var formObj = document.forms.setStartDate;
-    if (isMonday(formObj.startDate.value) == true) {
-     startWait();
-     google.script.run
-     .withSuccessHandler(successMsg)
-     .withFailureHandler(errorMsg)
-     .formatGantchart(7, formObj.startDate.value);
+   function markCbox_colorIndicator(data){
+    if(data == 'true'){
+     $('#cbox_parentBar').prop('checked', true);
+   } else {
+     $('#cbox_parentBar').prop('checked', false);
    };
  };
 
- $('#Donation').on( 'click', function(){
-  google.script.run.showPrompt();
-});
 
- $('#cbox').change(function(){
-   var isChecked = $('#cbox').is(':checked');
+ function send_reset(){
+  startWait();
+  google.script.run
+  .withSuccessHandler(successMsg)
+  .withFailureHandler(errorMsg)
+  .resetAll(textConfirm);
+};
+
+function send_redo(){
+  startWait();
+  google.script.run
+  .withSuccessHandler(successMsg)
+  .withFailureHandler(errorMsg)
+  .front_updateChart();
+};
+
+function send_recalculate(){
+  startWait();
+  google.script.run
+  .withSuccessHandler(successMsg)
+  .withFailureHandler(errorMsg)
+  .front_sumAllWnP();
+};
+
+
+function send_setStartDate(){
+  var formObj = document.forms.setStartDate;
+  if (isMonday(formObj.startDate.value) == true) {
    startWait();
    google.script.run
    .withSuccessHandler(successMsg)
    .withFailureHandler(errorMsg)
-   .colorIndicator(isChecked);
- });
+   .formatGantchart(7, formObj.startDate.value);
+ };
+};
+
+$('#Donation').on( 'click', function(){
+  google.script.run.showPrompt();
+});
+
+$('#cbox_colorIndicator').change(function(){
+ var isChecked = $('#cbox_colorIndicator').is(':checked');
+ startWait();
+ google.script.run
+ .withSuccessHandler(successMsg)
+ .withFailureHandler(errorMsg)
+ .colorIndicator(isChecked);
+});
+
+$('#cbox_parentBar').change(function(){
+ var isChecked = $('#cbox_parentBar').is(':checked');
+ startWait();
+ google.script.run
+ .withSuccessHandler(successMsg)
+ .withFailureHandler(errorMsg)
+ .front_showParentBar(isChecked);
+});
 
 
- function startWait(){
+
+
+
+function startWait(){
   $('#confirm').text('Please wait...');
   return;
 };

@@ -8,8 +8,9 @@ function front_updateChart(){
   var startRow = 3;
   var endRow = schedule.getLastRow();
   var data = schedule.getRange(1, 1, endRow, baseLine-1).getValues();
+  var parentTasks = findParentTasks(data);
   if(startRow > endRow){return;}; //No contents
-  updateChart(data, startRow, endRow, baseLine, baseDate);
+  updateChart(data, startRow, endRow, baseLine, baseDate, parentTasks);
   drawTodayLine();
 };
 
@@ -78,6 +79,52 @@ function colorIndicator(isChecked){
 function get_colorIndicator(){
   var memo = PropertiesService.getDocumentProperties();
   var isChecked = memo.getProperty('colorIndicator');
+  isChecked = isChecked === null ? false : isChecked;
+  return isChecked;
+};
+
+
+function front_showParentBar(isChecked){
+  Logger.log('front_showParentBar');
+  Logger.log(isChecked);
+  var memo = PropertiesService.getDocumentProperties();
+  memo.setProperty('ParentBar', isChecked);
+  var schedule = getScheduleSheet();
+  var lastRowOfContents = schedule.getLastRow();
+  var baseLine = findStartPoint('progress')+1;
+  var baseRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
+  var baseData = baseRange.getValues();
+  var baseDate = Moment.moment(memo.getProperty('baseDate'));
+  var formulas = baseRange.getFormulas();
+  var parentTasks = findParentTasks(baseData);
+  var indexOfPlannedStart = baseData[1].indexOf('plannedStart');
+  var indexOfPlannedFinish = baseData[1].indexOf('plannedFinish');
+
+  if(isChecked){//make all parents' bars
+    var newData = makeParentBar(baseData, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine);
+    baseRange.setValues(newData);
+  } else {//delete all parents' bars
+    //delete date in the data
+    for (var i = parentTasks.length-1; 0 <= i ; i--){
+      baseData[parentTasks[i]['index']][indexOfPlannedStart] = '';
+      baseData[parentTasks[i]['index']][indexOfPlannedFinish] = '';
+    };
+    updateChart(baseData, 3, lastRowOfContents, baseLine, baseDate, parentTasks);
+    //reflect the exiting formulas
+    for(var i = 0, len = formulas.length; i < len; i++){
+      for(var j = 0, len2 = formulas[0].length; j < len2; j++){
+        if(formulas[i][j] !== ''){
+          baseData[i][j] = formulas[i][j];
+        };
+      };
+    };
+    baseRange.setValues(baseData);
+  };
+};
+
+function get_ParentBar(){
+  var memo = PropertiesService.getDocumentProperties();
+  var isChecked = memo.getProperty('ParentBar');
   isChecked = isChecked === null ? false : isChecked;
   return isChecked;
 };

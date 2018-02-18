@@ -6,9 +6,9 @@
  */
 
 
-Logger.log('Google Apps Script on...');
+ Logger.log('Google Apps Script on...');
 
-function onInstall(e) {
+ function onInstall(e) {
   onOpen(e);
 }
 
@@ -56,7 +56,35 @@ function onEdit(e) {
 
    if (selectedItem === 'plannedStart' || selectedItem === 'plannedFinish' || selectedItem === 'actualStart' || selectedItem === 'actualFinish' || selectedItem === 'progress') {
     Logger.log('start or finish is edited');
-    updateChart(baseData, editedRow, lastRow, baseLine, baseDate);
+    //paint parents' bar if true
+    var memo = PropertiesService.getDocumentProperties();
+    var isParentBar = memo.getProperty('ParentBar') == 'false' ? false : true;
+    if(isParentBar){
+      if(selectedItem === 'plannedStart' || selectedItem === 'plannedFinish'){
+        Logger.log('show parents\' bar');
+        var formulas = baseRange.getFormulas();
+        var indexOfPlannedStart = baseData[1].indexOf('plannedStart');
+        var indexOfPlannedFinish = baseData[1].indexOf('plannedFinish');
+        if(editedRow === lastRow){
+          Logger.log('the number of target is one');
+          var parentTasks = findParentTasks(baseData, baseData[editedRow-1][0]);
+          updateChart(baseData, editedRow, lastRow, baseLine, baseDate, parentTasks);
+          var newData = makeParentBar(baseData, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine);
+          for (var i = 0, len = parentTasks.length; i < len; i++){
+            var values = [[newData[parentTasks[i]['index']][indexOfPlannedStart], newData[parentTasks[i]['index']][indexOfPlannedFinish]]];
+            schedule.getRange(parentTasks[i]['index']+1, indexOfPlannedStart+1, 1, 2).setValues(values);    
+          };
+        } else {
+          Logger.log('the number of target is more than one');
+          var parentTasks = findParentTasks(baseData);
+          updateChart(baseData, editedRow, lastRow, baseLine, baseDate, parentTasks);
+          var newData = makeParentBar(baseData, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine);
+          baseRange.setValues(newData);
+        };
+      };
+    } else {
+      updateChart(baseData, editedRow, lastRow, baseLine, baseDate);
+    };
   };
 
   if(selectedItem === 'progress' || selectedItem === 'plannedWorkload'){
@@ -65,6 +93,7 @@ function onEdit(e) {
     var indexOfProgress = baseData[1].indexOf('progress');
     var formulas = baseRange.getFormulas();
     if(editedRow === lastRow){
+      Logger.log('the number of target is one');
       var parentTasks = findParentTasks(baseData, baseData[editedRow-1][0]);
       var newData = sumTwoColumns(baseData, formulas, indexOfPlannedWorkload, indexOfProgress, parentTasks, baseDate);
       for (var i = 0, len = parentTasks.length; i < len; i++){
@@ -108,6 +137,7 @@ function onEdit(e) {
       if(!e.range.isBlank()) {
         Logger.log('add taskId');
         var data = createTaskId(baseData, taskData, taskEndLine, editedRow);
+        Logger.log(data);
         taskRange.setValues(data.taskData);
         baseData = data.baseData; //for the function: makeParentBold
       };
@@ -135,5 +165,4 @@ function onEdit(e) {
       formatGantchart(7, baseDate);
     };
   };
-
 };

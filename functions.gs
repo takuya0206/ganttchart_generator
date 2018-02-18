@@ -66,7 +66,7 @@ function createChart(){
     var lang = memo.getProperty('lang');
     var text = lang === 'ja' ? '既にscheduleシートが存在しています。新たに作成をするとこれまでの内容が削除されますがよろしいですか？' : 'You already have the schedule sheet. Please confirm that the existing contents will be deleted if you create a new gantt chart.';
     resetAll(text);
-    };
+  };
 };
 
 
@@ -196,7 +196,7 @@ function makeSampleTask(date){
 
 
 
-function updateChart(data, startRow, endRow, baseLine, baseDate){
+function updateChart(data, startRow, endRow, baseLine, baseDate, ParentTasks){
   Logger.log('updateChart start');
   var schedule = getScheduleSheet();
   var indexOfPlannedStart = data[1].indexOf('plannedStart');
@@ -207,6 +207,8 @@ function updateChart(data, startRow, endRow, baseLine, baseDate){
   var indexOfActualWorkload = data[1].indexOf('actualWorkload');
   var indexOfProgress = data[1].indexOf('progress');
   var columnNum = schedule.getMaxColumns();
+  var memo = PropertiesService.getDocumentProperties();
+  var isParentBar = memo.getProperty('ParentBar') == 'false' ? false : true;
   copyDefaultRow(startRow, baseLine, endRow-startRow+1, columnNum-baseLine+1); //initalize the target range
   for (var i = startRow; i <= endRow; i++){
     var index = i-1;
@@ -215,6 +217,16 @@ function updateChart(data, startRow, endRow, baseLine, baseDate){
     var actualStart = Moment.moment(data[index][indexOfActualStart]);
     var actualFinish = Moment.moment(data[index][indexOfActualFinish]);
     var progress = data[index][indexOfProgress];
+    var isParent = false;
+    //check whether the current ID is parent
+    if(isParentBar && ParentTasks){
+      ParentTasks.some(function(val){
+        if(val['ID'] == data[index][0]){
+          isParent = true;
+          return true;
+        };
+      });
+    };
     //if only planned finish is filled, paint a cell in orange(#FFBB00)
     if (plannedFinish.format('YYYY') !== 'Invalid date' && plannedStart.format('YYYY') === 'Invalid date') {
       setMilestone(i, baseLine, baseDate, plannedStart, plannedFinish, '#FFBB00', columnNum);
@@ -225,10 +237,11 @@ function updateChart(data, startRow, endRow, baseLine, baseDate){
         showDateErrorMsg(i);
         return;
       };
-      var color = judgeColor(plannedStart, plannedFinish, progress); //show alert color based on the progress
+
+      var color = judgeColor(plannedStart, plannedFinish, progress, isParent); //show alert color based on the progress
       //if the progress is on schedule, don't paint the progress column
       if(color === ''){
-        color = '#e3f0f9'; //blue
+        color = isParent == true ? '#6898ee': '#e3f0f9' ; //strong blue : blue
         schedule.getRange(i, indexOfProgress+1).setBackground('');
       } else {
         schedule.getRange(i, indexOfProgress+1).setBackground(color);
@@ -247,7 +260,8 @@ function updateChart(data, startRow, endRow, baseLine, baseDate){
     if (plannedFinish.format('YYYY') !== 'Invalid date' && plannedStart.format('YYYY') !== 'Invalid date' && actualFinish.format('YYYY') !== 'Invalid date' && actualStart.format('YYYY') !== 'Invalid date'){
       var isOverlap = checkOverlap(plannedStart, plannedFinish, actualStart, actualFinish);
       if (isOverlap !== false) {
-        paintChart(i, baseLine, baseDate, isOverlap[0], isOverlap[1], '#99c6ca', columnNum);
+        var color = isParent == true ? '#2b8390' : '#99c6ca' //strong : normal
+        paintChart(i, baseLine, baseDate, isOverlap[0], isOverlap[1], color, columnNum);
       };
     };
     //mark progress by using '='
@@ -269,14 +283,14 @@ function showDateErrorMsg(row){
 };
 
 
-function copyDefaultRow(top, left, height, width, option){
+function copyDefaultRow(row, col, height, width, option){
   Logger.log('copyDefaultRow start');
   var schedule = getScheduleSheet();
-  var range = schedule.getRange(2, left, 1, width);
+  var range = schedule.getRange(2, col, 1, width);
   if (!option){
-    range.copyTo(schedule.getRange(top, left, height, width));
+    range.copyTo(schedule.getRange(row, col, height, width));
   } else {
-    range.copyTo(schedule.getRange(top, left, height, width), {contentsOnly:true})
+    range.copyTo(schedule.getRange(row, col, height, width), {contentsOnly:true})
   };
 };
 
@@ -291,7 +305,7 @@ function setMilestone(top, baseLine, baseDate, startDate, finishDate, color, col
 };
 
 
-function judgeColor(start, finish, progress){
+function judgeColor(start, finish, progress, isParent){
   Logger.log('judgeColor start');
   var today = Moment.moment();
   var color = '';
@@ -299,110 +313,120 @@ function judgeColor(start, finish, progress){
   var isRequired = memo.getProperty('colorIndicator');
   if(isRequired === 'true'){
     if(start.isSame(today, 'days') && progress < 1){
-    color = '#ffff00'; //yellow
+    color = isParent == true ? '#f7c505' : '#ffff00'; //strong yellow : yellow
   };
   if(start.isBefore(today, 'days') && progress < 1){
     var actualProgress = finish.diff(start, 'days') * progress;
     var idealProgress = today.diff(start, 'days');
     if(actualProgress >= idealProgress){
-        color = '#ffff00'; //yellow
-      } else {
-        color = '#ff0000'; //red
+          color = isParent == true ? '#f7c505' : '#ffff00'; //strong yellow : yellow
+        } else {
+          color = isParent == true ? '#b60000' : '#ff0000'; //string red : red
+        };
       };
     };
+    return color;
   };
-  return color;
-};
 
 
-function paintChart(top, baseLine, baseDate, startDate, finishDate, color, columnNum){
-  Logger.log('paintChart start');
-  var schedule = getScheduleSheet();
-  var chartStart = baseLine + startDate.diff(baseDate, 'days');
-  var duration = finishDate.diff(startDate, 'days')+1;
-  if(chartStart < baseLine){
-    duration -= baseLine-chartStart;
-    if(duration <= 0){
-      return;
-    } else {
-      if(baseLine+duration > columnNum){
+  function paintChart(top, baseLine, baseDate, startDate, finishDate, color, columnNum){
+    Logger.log('paintChart start');
+    var schedule = getScheduleSheet();
+    var chartStart = baseLine + startDate.diff(baseDate, 'days');
+    if(chartStart >= columnNum){return;};
+    var duration = finishDate.diff(startDate, 'days')+1;
+    if(chartStart < baseLine){
+      duration -= baseLine-chartStart;
+      if(duration <= 0){
+        return;
+      } else {
+        if(baseLine+duration > columnNum){
+          try{
+            schedule.getRange(top, baseLine, 1, columnNum-baseLine+1).setBackground(color);
+          } catch(e){
+            Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
+          };
+        } else {
+          try{
+            schedule.getRange(top, baseLine, 1, duration).setBackground(color);
+          } catch(e){
+            Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
+          };
+        };
+      };
+    };
+    if (chartStart >= baseLine){
+      if (chartStart+duration > columnNum){
         try{
-          schedule.getRange(top, baseLine, 1, columnNum-baseLine+1).setBackground(color);
+          schedule.getRange(top, chartStart, 1, columnNum-chartStart+1).setBackground(color);
         } catch(e){
           Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
         };
       } else {
         try{
-          schedule.getRange(top, baseLine, 1, duration).setBackground(color);
+          schedule.getRange(top, chartStart, 1, duration).setBackground(color);
         } catch(e){
           Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
         };
       };
     };
   };
-  if (chartStart >= baseLine){
-    if (chartStart+duration > columnNum){
-      try{
-        schedule.getRange(top, chartStart, 1, columnNum-chartStart+1).setBackground(color);
-      } catch(e){
-        Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
-      };
-    } else {
-      try{
-        schedule.getRange(top, chartStart, 1, duration).setBackground(color);
-      } catch(e){
-        Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
-      };
-    };
-  };
-};
 
 
-function checkOverlap(firstStart, firstFinish, secondStart, secondFinish) {
-  Logger.log('checkOverlap start');
-  if(firstStart <= secondFinish && firstFinish >= secondStart) {
-   var isBigger = firstStart >= secondStart ? firstStart : secondStart;
-   var isSmaller = firstFinish <= secondFinish ? firstFinish : secondFinish;
-   return [isBigger, isSmaller];
- } else {
-   return false;
+  function checkOverlap(firstStart, firstFinish, secondStart, secondFinish) {
+    Logger.log('checkOverlap start');
+    if(firstStart <= secondFinish && firstFinish >= secondStart) {
+     var isBigger = firstStart >= secondStart ? firstStart : secondStart;
+     var isSmaller = firstFinish <= secondFinish ? firstFinish : secondFinish;
+     return [isBigger, isSmaller];
+   } else {
+     return false;
+   };
  };
-};
 
-function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
+ function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
   Logger.log('markProgress start');
   var schedule = getScheduleSheet();
   var columnNum = schedule.getMaxColumns();
   var chartStart = baseLine + startDate.diff(baseDate, 'days');
+  if(chartStart >= columnNum){return;};
   var duration = finishDate.diff(startDate, 'days')+1;
   if(chartStart < baseLine){
+    Logger.log('chartStart < baseLine');
     duration = columnNum-baseLine+1 > duration-(baseLine-chartStart) ? duration-(baseLine-chartStart) : columnNum-baseLine+1;
     Logger.log('duration:' + duration);
     if(duration <= 0){
       return;
     } else {
-      if(baseLine+duration < columnNum-baseLine+1){
-        var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
-        Logger.log('markLength:' + markLength);
-        if(markLength === 0){return;}
-        var progressLine = [];
-        progressLine.push([]);
-        for (var g = 0; g < markLength; g++) {
-          progressLine[0].push("'=");
-        };
-        try{
-          schedule.getRange(top, baseLine, 1, markLength).setValues(progressLine);
-        } catch(e){
-          Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
-        };
+      //if the progress is more than 100%, the max is equal to the duration
+      var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
+      Logger.log('markLength:' + markLength);
+      if(markLength === 0){return;}
+      //make array based on the markLength
+      var progressLine = [];
+      progressLine.push([]);
+      for (var g = 0; g < markLength; g++) {
+        progressLine[0].push("'=");
+      };
+      try{
+        schedule.getRange(top, baseLine, 1, markLength).setValues(progressLine);
+      } catch(e){
+        Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
       };
     };
   };
   if (chartStart >= baseLine){
+    Logger.log('chartStart >= baseLine');
+    //if the bar is longer than the total columns, the length is equal to the max columns
+    if(chartStart+duration > columnNum){
+      duration = columnNum-chartStart;
+    }
+    //if the progress is more than 100%, the max is equal to the duration
     var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
     Logger.log('duration:' + duration);
     Logger.log('markLength:' + markLength);
     if(markLength === 0){return;}
+    //make array based on the markLength
     var progressLine = [];
     progressLine.push([]);
     for (var g = 0; g < markLength; g++) {
@@ -586,8 +610,10 @@ function paintHolidays(baseLine, date, color, rowNum, columnNum){
 
 
 function findParentTasks(data, baseId){
+  Logger.log('start findParentTasks');
   var parentTasks = [];
   if(baseId){ //find parent tasks related to baseId
+    Logger.log('baseId is available');
     var taskIdAry = baseId.toString().split('_');
     for (var i = 0, len = taskIdAry.length-1; i < len; i++){
       taskIdAry.pop();
@@ -602,6 +628,7 @@ function findParentTasks(data, baseId){
       };
     };
  } else { //find all parent tasks
+   Logger.log('baseId is NOT available');
    for (var i = 0, len = data.length-1; i < len; i++){
     var tmp = data[i][0].toString() + '_1';
     for (var j = i, len2 = data.length; j < len2; j++){
@@ -618,31 +645,107 @@ function findParentTasks(data, baseId){
 return parentTasks;
 };
 
+function makeParentBar(data, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine){
+  Logger.log('start makeParentBar');
+  var schedule = getScheduleSheet();
+  for (var i = parentTasks.length-1; 0 <= i ; i--){
+    var parAry = parentTasks[i]['ID'].toString().split('_');
+    var currentIndex = parentTasks[i]['index'];
+    var plannedStartAry = [];
+    var plannedFinishAry = [];
+    Logger.log('parAry: '+ parAry);
+    //find start and finish date in child tasks which are related to the parent
+    for (var j = currentIndex+1, len = data.length; j < len; j++){
+      var isChild = false;
+      var isSame = true;
+      var judgedAry = data[j][0].toString().split('_');
+      var min = 0;
+      var max = 0;
+      Logger.log('judgedAry: '+ judgedAry);
+      //screening based on the first value and the length
+      if(parAry[0] === judgedAry[0] && parAry.length === judgedAry.length-1){
+        //judge based on the whole value
+        for (var k = 0, len2 = parAry.length; k < len2; k++){
+          Logger.log('parAry[k]: '+ parAry[k]);
+          Logger.log('judgedAry[k]: '+ judgedAry[k]);
+          if(parAry[k] !== judgedAry[k]){
+            isSame = false;
+            break;
+          };
+        };
+        if(isSame){isChild = true;};
+      };
+      if(isChild){
+        Logger.log('Related: '+ judgedAry);
+        plannedStartAry.push(data[j][indexOfPlannedStart]);
+        plannedFinishAry.push(data[j][indexOfPlannedFinish]);
+      };
+    };
+    //find the biggest and the smallest date and reflect them on the data
+    plannedStartAry.forEach(function(val, index){
+      if(Moment.moment(val).format('YYYY') == 'Invalid date'){
+        plannedStartAry[index] = Math.pow(2, 53)-1;//max integer
+      };
+    });
+    plannedFinishAry.forEach(function(val, index){
+      if(Moment.moment(val).format('YYYY') == 'Invalid date'){
+        plannedFinishAry[index] = 0;
+      };
+    });
+    min = Math.min.apply(null, plannedStartAry);
+    max = Math.max.apply(null, plannedFinishAry);
+    data[currentIndex][indexOfPlannedStart] = min == Math.pow(2, 53)-1 ? '' : new Date(min);
+    data[currentIndex][indexOfPlannedFinish] = max == 0 ? '' : new Date(max);
+    //if start and finish are available, update the gannt chart
+    var plannedFinish = Moment.moment(data[currentIndex][indexOfPlannedFinish]);
+    if(plannedFinish.format('YYYY') !== 'Invalid date'){
+      updateChart(data, currentIndex+1, currentIndex+1, baseLine, baseDate, parentTasks);
+    } else {
+      copyDefaultRow(currentIndex+1, baseLine, 1, schedule.getLastColumn()-baseLine+1);
+    };
+  };
+  //reflect the exiting formulas
+  for(var i = 0, len = formulas.length; i < len; i++){
+    for(var j = 0, len2 = formulas[0].length; j < len2; j++){
+      if(formulas[i][j] !== ''){
+        data[i][j] = formulas[i][j];
+      };
+    };
+  };
+  return data;
+};
+
+
+
 
 function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, baseDate){
   Logger.log('sumTwoColumns start');
   var schedule = getScheduleSheet();
+  var indexOfPlannedStart = data[1].indexOf('plannedStart');
+  var indexOfPlannedFinish = data[1].indexOf('plannedFinish');
   for (var i = parentTasks.length-1; 0 <= i ; i--){
     var earnedVal = 0;
     var parAry = parentTasks[i]['ID'].toString().split('_');
     var currentIndex = parentTasks[i]['index'];
-    var indexOfPlannedStart = data[1].indexOf('plannedStart');
-    var indexOfPlannedFinish = data[1].indexOf('plannedFinish');
     data[currentIndex][workloadCol] = 0;
     data[currentIndex][progressCol] = 0;
     //find and calculate child tasks
     for (var j = currentIndex, len2 = data.length; j < len2; j++){
-      var isChild = true;
+      var isChild = false;
+      var isSame = true;
+      //var isChild = true;
       var judgedAry = data[j][0].toString().split('_');
         //screening based on the first value and the length
         if(parAry[0] === judgedAry[0] && parAry.length === judgedAry.length-1){
           //judge based on the whole value
           for (var k = 0, len3 = parAry.length; k < len3; k++){
             if(parAry[k] !== judgedAry[k]){
-              isChild = false;
+              isSame = false;
+              //isChild = false;
               break;
             };
           };
+          if(isSame){isChild = true;};
           if(isChild){
             //set 0 if the value is NaN
             data[j][workloadCol] = false === isNum(data[j][workloadCol]) ? 0 : data[j][workloadCol];
@@ -663,7 +766,7 @@ function sumTwoColumns(data, formulas, workloadCol, progressCol, parentTasks, ba
       var plannedStart = Moment.moment(data[currentIndex][indexOfPlannedStart]);
       var plannedFinish = Moment.moment(data[currentIndex][indexOfPlannedFinish]);
       if(plannedStart.format('YYYY') !== 'Invalid date' && plannedFinish.format('YYYY') !== 'Invalid date'){
-        updateChart(data, currentIndex+1, currentIndex+1, progressCol+2, baseDate);
+        updateChart(data, currentIndex+1, currentIndex+1, progressCol+2, baseDate, parentTasks);
       };
     };
   //reflect the exiting formulas
@@ -701,65 +804,67 @@ function createTaskId(baseData, taskData, taskEndLine, startRow){
     var distanceToBro = 0;
     var distanceToPar = 0;
     var result = 0;
+    var isTask = false;
     //if there is a value in the i row...
     for(var j = 1; j < taskEndLine; j++){
       if(baseData[i][j] != ''){
         taskPos.row = i;
         taskPos.col = j;
+        isTask = true;
         break;
       };
     };
-    if(taskPos.row && taskPos.col){
-      //check there is a brother task
-      for(var j = taskPos.row-1; j >= 2; j--){
-        if(baseData[j][taskPos.col] !== ''){
-          broId = taskData[j][0];
-          isBro = true;
-          break;
-        }
-        distanceToBro += 1;
-      };
-      //check there is a parent task
-      label_innerFor:
-      for (var j = taskPos.row-1; j >= 2; j--){
-        if(taskPos.col === 1){
-          distanceToPar = Math.pow(2, 53)-1; //max value
-          break;
+    if(isTask){
+      if(taskPos.row && taskPos.col){
+        //check there is a brother task
+        for(var j = taskPos.row-1; j >= 2; j--){
+          if(baseData[j][taskPos.col] !== ''){
+            broId = taskData[j][0];
+            isBro = true;
+            break;
+          };
+          distanceToBro += 1;
         };
-        for(var k = taskPos.col-1; k > 0; k--){
-          if(baseData[j][k] !== ''){
-            parId = baseData[j][0];
-            isPar = true;
-            break label_innerFor;
+        //check there is a parent task
+        label_innerFor:
+        for (var j = taskPos.row-1; j >= 2; j--){
+          if(taskPos.col === 1){
+            distanceToPar = Math.pow(2, 53)-1; //max value
+            break;
+          };
+          for(var k = taskPos.col-1; k > 0; k--){
+            if(baseData[j][k] !== ''){
+              parId = baseData[j][0];
+              isPar = true;
+              break label_innerFor;
+            };
+          };
+          distanceToPar += 1;
+        };
+        Logger.log('broId:' + broId);
+        Logger.log('parId:' + parId);
+        Logger.log('distanceToBro:' + distanceToBro);
+        Logger.log('distanceToPar:' + distanceToPar);
+        //judgement
+        if (isBro === false && isPar === false){
+          result = 1;
+        };
+        if (distanceToBro < distanceToPar){
+          if(broId.toString().length === 1){
+            result = parseInt(broId) + 1;
+          } else {
+            var ary = broId.toString().split('_');
+            ary[ary.length-1] = parseInt(ary[ary.length-1]) + 1;
+            var str = ary.join('_');
+            result = str;
           };
         };
-        distanceToPar += 1;
-      };
-
-      Logger.log('broId:' + broId);
-      Logger.log('parId:' + parId);
-      Logger.log('distanceToBro:' + distanceToBro);
-      Logger.log('distanceToPar:' + distanceToPar);
-
-      //judgement
-      if (isBro === false && isPar === false){
-        result = 1;
-      };
-      if (distanceToBro < distanceToPar){
-        if(broId.toString().length === 1){
-          result = parseInt(broId) + 1;
-        } else {
-          var ary = broId.toString().split('_');
-          ary[ary.length-1] = parseInt(ary[ary.length-1]) + 1;
-          var str = ary.join('_');
-          result = str;
+        if (distanceToBro > distanceToPar){
+          result = parId + '_' + 1;
         };
+        baseData[i][0] = result;
+        taskData[i][0] = result;
       };
-      if (distanceToBro > distanceToPar){
-        result = parId + '_' + 1;
-      };
-      baseData[i][0] = result;
-      taskData[i][0] = result;
     };
   };
   var output = {'baseData': baseData, 'taskData': taskData};
