@@ -57,7 +57,8 @@ Item           | Action
 Change Start Date       | Cange start date in a gantt chart          
 Recalculate Workload (plan) & Progress | Calculate all parents' worklaod and progress             
 Repaint Gantt Chart | Repaint all of the Chart         
-Color Indication      | Indicate progress like blue means "completed," yellow means "in progress" and red means "delayed"
+Show Color Indication      | Indicate progress like blue means "completed," yellow means "in progress" and red means "delayed"
+Show Parents' Charts      | Automatically show total duration of parents' charts
 Initalize Gantt Chart          | Initalize schedule sheet and holiday sheet
 
 ## Recommended Usage
@@ -65,6 +66,7 @@ Initalize Gantt Chart          | Initalize schedule sheet and holiday sheet
 * Place a project name in the top hierarchy and make all of the tasks its children. That is to say, you can automatically calculate progress of your project.
 * Break down tasks in detail like Parent tasks, child tasks and grandchild tasks.
 * Place planned start and planned finish in tasks which you have to watch daily or weekly.
+* Use "show parents' charts" when you check progress from a broad viewpoint.
 * Utilize "workday function." You can refer to A column in holiday sheet and workload (plan).
 * Place workload in man-day.
 * Watch progress by using actual start and actual finish or progress bars.
@@ -74,9 +76,9 @@ Initalize Gantt Chart          | Initalize schedule sheet and holiday sheet
 ## Restriction
 
 * Do not change the sheet name (schedule sheet and holiday sheet).
-* Do not insert rows above the item row.
-* Do not edit or delte the hiden second row.
-* Do not insert columns after the progress column.
+* Do not insert rows before the item row.
+* Do not edit or delete the hidden second row.
+* Do not insert columns between the start and the finish date column and after the progress column.
 
 ## License
 GNU General Public License (GPL)
