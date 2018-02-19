@@ -84,11 +84,11 @@ function get_colorIndicator(){
 };
 
 
-function front_showParentBar(isChecked){
-  Logger.log('front_showParentBar');
+function front_showParentChart(isChecked){
+  Logger.log('front_showParentChart');
   Logger.log(isChecked);
   var memo = PropertiesService.getDocumentProperties();
-  memo.setProperty('ParentBar', isChecked);
+  memo.setProperty('ParentChart', isChecked);
   var schedule = getScheduleSheet();
   var lastRowOfContents = schedule.getLastRow();
   var baseLine = findStartPoint('progress')+1;
@@ -101,7 +101,7 @@ function front_showParentBar(isChecked){
   var indexOfPlannedFinish = baseData[1].indexOf('plannedFinish');
 
   if(isChecked){//make all parents' bars
-    var newData = makeParentBar(baseData, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine);
+    var newData = makeParentChart(baseData, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine);
     baseRange.setValues(newData);
   } else {//delete all parents' bars
     //delete date and color in the data
@@ -124,9 +124,9 @@ function front_showParentBar(isChecked){
   };
 };
 
-function get_ParentBar(){
+function get_parentChart(){
   var memo = PropertiesService.getDocumentProperties();
-  var isChecked = memo.getProperty('ParentBar');
+  var isChecked = memo.getProperty('ParentChart');
   isChecked = isChecked === null ? false : isChecked;
   return isChecked;
 };

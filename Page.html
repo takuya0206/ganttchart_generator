@@ -74,8 +74,8 @@
       <label id="cbox_label_colorIndicator" for="checkbox"></label>
     </div>
     <div>
-      <input type="checkbox" id="cbox_parentBar">
-      <label id="cbox_label_parentBar" for="checkbox"></label>
+      <input type="checkbox" id="cbox_parentChart">
+      <label id="cbox_label_parentChart" for="checkbox"></label>
     </div>
     <br />
     <div class="block form-group">
@@ -120,7 +120,7 @@
     var textMonday = lang === 'ja' ? '月曜日を設定してください。' : 'Start date should be Monday.'
     var textConfirm = lang === 'ja' ? '全てのデータが削除されます。よろしいでしょうか？' : 'Please confirm. All of the data will be deleted.'
     var textCbox_colorIndicator = lang === 'ja' ? '進捗別の色表記' : 'Show Color Indication';
-    var textCbox_parentBar = lang === 'ja' ? '親タスクのバーを自動表示' : 'Show Parents\' Charts';
+    var textCbox_parentChart = lang === 'ja' ? '親タスクの自動反映' : 'Show Parents\' Charts';
 
     $('#Donation').text(textDonation);
     $('#Inquire').text(textInquire);
@@ -133,7 +133,7 @@
     $('#Redo').text(textRedo);
     $('#Reset').text(textReset);
     $('#cbox_label_colorIndicator').text(textCbox_colorIndicator);
-    $('#cbox_label_parentBar').text(textCbox_parentBar);
+    $('#cbox_label_parentChart').text(textCbox_parentChart);
 
     $('.action').each(function(){
       $(this).val(textButton);
@@ -149,8 +149,8 @@
     .get_colorIndicator();
 
     google.script.run
-    .withSuccessHandler(markCbox_colorIndicator)
-    .get_ParentBar();
+    .withSuccessHandler(markCbox_parentChart)
+    .get_parentChart();
 
     function markCbox_colorIndicator(data){
       if(data == 'true'){
@@ -160,11 +160,11 @@
      };
    };
 
-   function markCbox_colorIndicator(data){
+   function markCbox_parentChart(data){
     if(data == 'true'){
-     $('#cbox_parentBar').prop('checked', true);
+     $('#cbox_parentChart').prop('checked', true);
    } else {
-     $('#cbox_parentBar').prop('checked', false);
+     $('#cbox_parentChart').prop('checked', false);
    };
  };
 
@@ -218,13 +218,13 @@ $('#cbox_colorIndicator').change(function(){
  .colorIndicator(isChecked);
 });
 
-$('#cbox_parentBar').change(function(){
- var isChecked = $('#cbox_parentBar').is(':checked');
+$('#cbox_parentChart').change(function(){
+ var isChecked = $('#cbox_parentChart').is(':checked');
  startWait();
  google.script.run
  .withSuccessHandler(successMsg)
  .withFailureHandler(errorMsg)
- .front_showParentBar(isChecked);
+ .front_showParentChart(isChecked);
 });
 
 

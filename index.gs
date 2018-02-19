@@ -58,9 +58,9 @@ function onEdit(e) {
     Logger.log('start or finish is edited');
     //paint parents' bar if true
     var memo = PropertiesService.getDocumentProperties();
-    var isParentBar = memo.getProperty('ParentBar') == 'false' ? false : true;
-    Logger.log(isParentBar);
-    if(isParentBar){
+    var isParentChart = memo.getProperty('ParentChart') == 'false' ? false : true;
+    Logger.log(isParentChart);
+    if(isParentChart){
       if(selectedItem === 'plannedStart' || selectedItem === 'plannedFinish'){
         Logger.log('show parents\' bar');
         var formulas = baseRange.getFormulas();
@@ -70,7 +70,7 @@ function onEdit(e) {
           Logger.log('the number of target is one');
           var parentTasks = findParentTasks(baseData, baseData[editedRow-1][0]);
           updateChart(baseData, editedRow, lastRow, baseLine, baseDate, parentTasks);
-          var newData = makeParentBar(baseData, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine);
+          var newData = makeParentChart(baseData, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine);
           for (var i = 0, len = parentTasks.length; i < len; i++){
             var values = [[newData[parentTasks[i]['index']][indexOfPlannedStart], newData[parentTasks[i]['index']][indexOfPlannedFinish]]];
             schedule.getRange(parentTasks[i]['index']+1, indexOfPlannedStart+1, 1, 2).setValues(values);
@@ -79,7 +79,7 @@ function onEdit(e) {
           Logger.log('the number of target is more than one');
           var parentTasks = findParentTasks(baseData);
           updateChart(baseData, editedRow, lastRow, baseLine, baseDate, parentTasks);
-          var newData = makeParentBar(baseData, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine);
+          var newData = makeParentChart(baseData, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine);
           baseRange.setValues(newData);
         };
       } else {

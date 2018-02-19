@@ -207,7 +207,7 @@ function updateChart(data, startRow, endRow, baseLine, baseDate, ParentTasks){
   var indexOfProgress = data[1].indexOf('progress');
   var columnNum = schedule.getMaxColumns();
   var memo = PropertiesService.getDocumentProperties();
-  var isParentBar = memo.getProperty('ParentBar') == 'false' ? false : true;
+  var isParentChart = memo.getProperty('ParentChart') == 'false' ? false : true;
   copyDefaultRow(startRow, baseLine, endRow-startRow+1, columnNum-baseLine+1); //initalize the target range
   for (var i = startRow; i <= endRow; i++){
     var index = i-1;
@@ -218,7 +218,7 @@ function updateChart(data, startRow, endRow, baseLine, baseDate, ParentTasks){
     var progress = data[index][indexOfProgress];
     var isParent = false;
     //check whether the current ID is parent
-    if(isParentBar && ParentTasks){
+    if(isParentChart && ParentTasks){
       ParentTasks.some(function(val){
         if(val['ID'] == data[index][0]){
           isParent = true;
@@ -644,8 +644,8 @@ function findParentTasks(data, baseId){
 return parentTasks;
 };
 
-function makeParentBar(data, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine){
-  Logger.log('start makeParentBar');
+function makeParentChart(data, formulas, indexOfPlannedStart, indexOfPlannedFinish, parentTasks, baseDate, baseLine){
+  Logger.log('start makeParentChart');
   var schedule = getScheduleSheet();
   for (var i = parentTasks.length-1; 0 <= i ; i--){
     var parAry = parentTasks[i]['ID'].toString().split('_');
