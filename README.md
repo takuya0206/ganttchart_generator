@@ -83,6 +83,16 @@ Initalize Gantt Chart          | Initalize schedule sheet and holiday sheet
 ## License
 GNU General Public License (GPL)
 
+## FAQ
+
+ - How do I extend the width of my gantt chart?
+
+The width of a gantt chart can not be changed and is fixed for 168 columns, which means 24 weeks. If you'd like to show after the period, you can do it by using "Change Start Date" in the sidebar.
+
+ - How do I change the color of charts?
+
+The color of charts can not be changed as you like. In the current specification,  Show Color Indication is the function related to change of color.
+
 ## Privacy Policy
 We treat your privacy with respect and it is secured and will never be sold, shared or rented to third parties.
 
