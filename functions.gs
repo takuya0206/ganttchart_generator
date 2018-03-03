@@ -66,6 +66,7 @@ function createChart(){
     var text = lang === 'ja' ? '既にscheduleシートが存在しています。新たに作成をするとこれまでの内容が削除されますがよろしいですか？' : 'You already have the schedule sheet. Please confirm that the existing contents will be deleted if you create a new gantt chart.';
     resetAll(text);
   };
+  showSidebar();
 };
 
 
