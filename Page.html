@@ -121,6 +121,7 @@
     var textConfirm = lang === 'ja' ? '全てのデータが削除されます。よろしいでしょうか？' : 'Please confirm. All of the data will be deleted.'
     var textCbox_colorIndicator = lang === 'ja' ? '進捗別の色表記' : 'Show Color Indication';
     var textCbox_parentChart = lang === 'ja' ? '親タスクの自動反映' : 'Show Parents\' Charts';
+    var date = new Date();
 
     $('#Donation').text(textDonation);
     $('#Inquire').text(textInquire);
@@ -152,115 +153,118 @@
     .withSuccessHandler(markCbox_parentChart)
     .get_parentChart();
 
+    //set TimeZone
+    var timeDiff = (date.getHours() - date.getUTCHours() + 24 ) % 24;
+    google.script.run.setTimeDiff(timeDiff);
+
+    //functions
     function markCbox_colorIndicator(data){
       if(data == 'true'){
-       $('#cbox_colorIndicator').prop('checked', true);
-     } else {
-       $('#cbox_colorIndicator').prop('checked', false);
-     };
-   };
+        $('#cbox_colorIndicator').prop('checked', true);
+      } else {
+        $('#cbox_colorIndicator').prop('checked', false);
+      };
+    };
 
-   function markCbox_parentChart(data){
-    if(data == 'true'){
-     $('#cbox_parentChart').prop('checked', true);
-   } else {
-     $('#cbox_parentChart').prop('checked', false);
-   };
- };
-
-
- function send_reset(){
-  startWait();
-  google.script.run
-  .withSuccessHandler(successMsg)
-  .withFailureHandler(errorMsg)
-  .resetAll(textConfirm);
-};
-
-function send_redo(){
-  startWait();
-  google.script.run
-  .withSuccessHandler(successMsg)
-  .withFailureHandler(errorMsg)
-  .front_updateChart();
-};
-
-function send_recalculate(){
-  startWait();
-  google.script.run
-  .withSuccessHandler(successMsg)
-  .withFailureHandler(errorMsg)
-  .front_sumAllWnP();
-};
+    function markCbox_parentChart(data){
+      if(data == 'true'){
+        $('#cbox_parentChart').prop('checked', true);
+      } else {
+        $('#cbox_parentChart').prop('checked', false);
+      };
+    };
 
 
-function send_setStartDate(){
-  var formObj = document.forms.setStartDate;
-  if (isMonday(formObj.startDate.value) == true) {
-   startWait();
-   google.script.run
-   .withSuccessHandler(successMsg)
-   .withFailureHandler(errorMsg)
-   .formatGantchart(7, formObj.startDate.value);
- };
-};
+    function send_reset(){
+      startWait();
+      google.script.run
+      .withSuccessHandler(successMsg)
+      .withFailureHandler(errorMsg)
+      .resetAll(textConfirm);
+    };
 
-$('#Donation').on( 'click', function(){
-  google.script.run.showPrompt();
-});
+    function send_redo(){
+      startWait();
+      google.script.run
+      .withSuccessHandler(successMsg)
+      .withFailureHandler(errorMsg)
+      .front_updateChart();
+    };
 
-$('#cbox_colorIndicator').change(function(){
- var isChecked = $('#cbox_colorIndicator').is(':checked');
- startWait();
- google.script.run
- .withSuccessHandler(successMsg)
- .withFailureHandler(errorMsg)
- .colorIndicator(isChecked);
-});
-
-$('#cbox_parentChart').change(function(){
- var isChecked = $('#cbox_parentChart').is(':checked');
- startWait();
- google.script.run
- .withSuccessHandler(successMsg)
- .withFailureHandler(errorMsg)
- .front_showParentChart(isChecked);
-});
+    function send_recalculate(){
+      startWait();
+      google.script.run
+      .withSuccessHandler(successMsg)
+      .withFailureHandler(errorMsg)
+      .front_sumAllWnP();
+    };
 
 
+    function send_setStartDate(){
+      var formObj = document.forms.setStartDate;
+      if (isMonday(formObj.startDate.value) == true) {
+        startWait();
+        google.script.run
+        .withSuccessHandler(successMsg)
+        .withFailureHandler(errorMsg)
+        .formatGantchart(7, formObj.startDate.value);
+      };
+    };
+
+    $('#Donation').on( 'click', function(){
+      google.script.run.showPrompt();
+    });
+
+    $('#cbox_colorIndicator').change(function(){
+      var isChecked = $('#cbox_colorIndicator').is(':checked');
+      startWait();
+      google.script.run
+      .withSuccessHandler(successMsg)
+      .withFailureHandler(errorMsg)
+      .colorIndicator(isChecked);
+    });
 
 
+    $('#cbox_parentChart').change(function(){
+      var isChecked = $('#cbox_parentChart').is(':checked');
+      startWait();
+      google.script.run
+      .withSuccessHandler(successMsg)
+      .withFailureHandler(errorMsg)
+      .front_showParentChart(isChecked);
+    });
 
-function startWait(){
-  $('#confirm').text('Please wait...');
-  return;
-};
 
-function removeMsg(){
-  $('#confirm').text('');
-  return;
-};
+    function startWait(){
+      $('#confirm').text('Please wait...');
+      return;
+    };
 
-function successMsg(){
-  $('#confirm').text('Successfully done');
-  setTimeout(removeMsg, 4000);
-}
+    function removeMsg(){
+      $('#confirm').text('');
+      return;
+    };
 
-function errorMsg(){
-  $('#confirm').text('System error');
-  setTimeout(removeMsg, 4000);
-}
+    function successMsg(){
+      $('#confirm').text('Successfully done');
+      setTimeout(removeMsg, 4000);
+    };
 
-function isMonday(date){
- var day = new Date (date);
- if(day.getDay() !== 1) {
-   $('#confirm').text(textMonday);
-   setTimeout(removeMsg, 4000);
-   return false;
- };
- return true;
-};
+    function errorMsg(){
+      $('#confirm').text('System error');
+      setTimeout(removeMsg, 4000);
+    };
 
-</script>
+    function isMonday(date){
+      var day = new Date (date);
+      if(day.getDay() !== 1) {
+        $('#confirm').text(textMonday);
+        setTimeout(removeMsg, 4000);
+        return false;
+      };
+      return true;
+    };
+
+  </script>
 </body>
 </html>

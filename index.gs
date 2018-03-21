@@ -140,7 +140,6 @@ function onEdit(e) {
       if(!e.range.isBlank()) {
         Logger.log('add taskId');
         var data = createTaskId(baseData, taskData, taskEndLine, editedRow);
-        Logger.log(data);
         taskRange.setValues(data.taskData);
         baseData = data.baseData; //for the function: makeParentBold
       };
