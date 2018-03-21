@@ -212,7 +212,7 @@ function updateChart(data, startRow, endRow, baseLine, baseDate, ParentTasks){
 
   //calculate today with time difference for the function: colorIndicator
   var today = Moment.moment().set('hour', 0).set('minute', 0).set('second', 0);
-  var timeDiff = memo.getProperty('timeDiff');
+  var timeDiff = parseInt(memo.getProperty('timeDiff'));
   if(timeDiff < 0){
     today = today.subtract(1, 'days');
   } else {
@@ -466,11 +466,11 @@ function drawTodayLine() {
   Logger.log('drawTodayLine start');
   var schedule = getScheduleSheet();
   var memo = PropertiesService.getDocumentProperties();
-  var timeDiff = memo.getProperty('timeDiff');
+  var timeDiff = parseInt(memo.getProperty('timeDiff'));
   var today = Moment.moment()
-  today = today.subtract(timeDiff, 'days');
   var baseLine = findStartPoint('progress')+1;
   var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+  baseDate = baseDate.subtract(timeDiff, 'hours');
   var lastRowOfContents = schedule.getLastRow();
   var nextBaseLine = baseLine + 1;
   var todayLine = baseLine + today.diff(baseDate, 'days');
