@@ -6,9 +6,11 @@
  */
 
 
- Logger.log('Google Apps Script on...');
+Logger.log('Google Apps Script on...');
 
- function onInstall(e) {
+
+
+function onInstall(e) {
   onOpen(e);
 }
 
@@ -45,7 +47,7 @@ function onEdit(e) {
     var lastRowOfContents = schedule.getLastRow();
     var selectedItem = schedule.getRange(2, editedColumn).getValue();
     var baseLine = findStartPoint('progress')+1;
-    var baseDate = memo.getProperty('baseDate');
+    var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
     var baseRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
     var baseData = baseRange.getValues();
 
@@ -162,8 +164,9 @@ function onEdit(e) {
   if (e.source.getActiveSheet().getName() === 'holiday'){
     Logger.log('for the holiday sheet');
     if(e.range.getColumn() === 1){
-      var memo = PropertiesService.getDocumentProperties();
-      var baseDate = Moment.moment(memo.getProperty('baseDate'));
+      var schedule = getScheduleSheet();
+      var baseLine = findStartPoint('progress')+1;
+      var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
       formatGantchart(7, baseDate);
     };
   };

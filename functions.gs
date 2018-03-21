@@ -127,9 +127,6 @@ function init(){
     'format': format,
     'cellformat': cellformat
   });
-  //dataValidation
-  var rule_date = SpreadsheetApp.newDataValidation().requireDate().build();
-  var rule_int = SpreadsheetApp.newDataValidation().requireNumberGreaterThan(-1).build();
   //format related to items
   schedule.getRange('A:A').setHorizontalAlignment('left').setBackground('#f3f3f3');
   firstRow.setBackground('#f3f3f3');
@@ -147,10 +144,15 @@ function init(){
   schedule.setColumnWidth(indexOfActualWorkload+1, 45);
   schedule.getRange(3, indexOfPlannedWorkload+1,rowNum-3+1, 2).setDataValidation(rule_int);
   schedule.getRange(1, indexOfPlannedWorkload+1, 1, 2).merge();
+  holiday.getRange(1, 1).setNote(note);
+
+  //dataValidation
+  var rule_date = SpreadsheetApp.newDataValidation().requireDate().build();
+  var rule_int = SpreadsheetApp.newDataValidation().requireNumberGreaterThan(-1).build();
   schedule.getRange(3, indexOfProgress+1, rowNum-3+1, 1).setNumberFormat('0.0%').setDataValidation(rule_int);
   schedule.getRange(3, indexOfPlannedStart+1, rowNum-3+1, 4).setNumberFormat(cellformat).setDataValidation(rule_date);
-  holiday.getRange(1, 1).setNote(note);
   holiday.getRange('A:A').setNumberFormat(cellformat).setDataValidation(rule_date);
+
   //adjust the number of rows
   if(rowNum > 200){
     schedule.deleteRows(200, rowNum-200);
@@ -208,8 +210,11 @@ function updateChart(data, startRow, endRow, baseLine, baseDate, ParentTasks){
   var indexOfProgress = data[1].indexOf('progress');
   var columnNum = schedule.getMaxColumns();
   var memo = PropertiesService.getDocumentProperties();
+  var timeDiff = memo.getProperty('timeDiff');
+  var today = Moment.moment()
+  today = today.add(timeDiff, 'hours');
   var isParentChart = memo.getProperty('ParentChart') == 'false' ? false : true;
-  copyDefaultRow(startRow, baseLine, endRow-startRow+1, columnNum-baseLine+1); //initalize the target range
+  copyDefaultRow(startRow, baseLine, endRow-startRow+1, columnNum-baseLine+1); //initalize　the target range
   for (var i = startRow; i <= endRow; i++){
     var index = i-1;
     var plannedStart = Moment.moment(data[index][indexOfPlannedStart]);
@@ -238,7 +243,7 @@ function updateChart(data, startRow, endRow, baseLine, baseDate, ParentTasks){
         return;
       };
 
-      var color = judgeColor(plannedStart, plannedFinish, progress, isParent); //show alert color based on the progress
+      var color = judgeColor(plannedStart, plannedFinish, progress, today, isParent); //show alert color based on the progress
       //if the progress is on schedule, don't paint the progress column
       if(color === ''){
         color = isParent == true ? '#6898ee': '#e3f0f9' ; //strong blue : blue
@@ -283,15 +288,22 @@ function showDateErrorMsg(row){
 };
 
 
-function copyDefaultRow(row, col, height, width, option){
+function copyDefaultRow(row, col, height, width, baseLine, option){
   Logger.log('copyDefaultRow start');
   var schedule = getScheduleSheet();
+  //delete baseDate
+  var saveRange = schedule.getRange(2, col);
+  var saveVal = saveRange.getValue();
+  saveRange.setValue('');
+  //copy the default format to the target range
   var range = schedule.getRange(2, col, 1, width);
   if (!option){
     range.copyTo(schedule.getRange(row, col, height, width));
   } else {
     range.copyTo(schedule.getRange(row, col, height, width), {contentsOnly:true})
   };
+  //restore baseDate
+  saveRange.setValue(saveVal);
 };
 
 
@@ -305,9 +317,8 @@ function setMilestone(top, baseLine, baseDate, startDate, finishDate, color, col
 };
 
 
-function judgeColor(start, finish, progress, isParent){
+function judgeColor(start, finish, progress, today, isParent){
   Logger.log('judgeColor start');
-  var today = Moment.moment();
   var color = '';
   var memo = PropertiesService.getDocumentProperties();
   var isRequired = memo.getProperty('colorIndicator');
@@ -316,75 +327,78 @@ function judgeColor(start, finish, progress, isParent){
     color = isParent == true ? '#f7c505' : '#ffff00'; //strong yellow : yellow
   };
   if(start.isBefore(today, 'days') && progress < 1){
-    var actualProgress = finish.diff(start, 'days') * progress;
+    var actualProgress = Math.round(finish.diff(start, 'days') * progress);
     var idealProgress = today.diff(start, 'days');
     if(actualProgress >= idealProgress){
-          color = isParent == true ? '#f7c505' : '#ffff00'; //strong yellow : yellow
-        } else {
-          color = isParent == true ? '#b60000' : '#ff0000'; //string red : red
-        };
-      };
-    };
-    return color;
-  };
-
-
-  function paintChart(top, baseLine, baseDate, startDate, finishDate, color, columnNum){
-    Logger.log('paintChart start');
-    var schedule = getScheduleSheet();
-    var chartStart = baseLine + startDate.diff(baseDate, 'days');
-    if(chartStart >= columnNum){return;};
-    var duration = finishDate.diff(startDate, 'days')+1;
-    if(chartStart < baseLine){
-      duration -= baseLine-chartStart;
-      if(duration <= 0){
-        return;
+      color = isParent == true ? '#f7c505' : '#ffff00'; //strong yellow : yellow
       } else {
-        if(baseLine+duration > columnNum){
-          try{
-            schedule.getRange(top, baseLine, 1, columnNum-baseLine+1).setBackground(color);
-          } catch(e){
-            Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
-          };
-        } else {
-          try{
-            schedule.getRange(top, baseLine, 1, duration).setBackground(color);
-          } catch(e){
-            Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
-          };
-        };
+        color = isParent == true ? '#b60000' : '#ff0000'; //strong red : red
       };
     };
-    if (chartStart >= baseLine){
-      if (chartStart+duration > columnNum){
+  };
+  return color;
+};
+
+
+function paintChart(top, baseLine, baseDate, startDate, finishDate, color, columnNum){
+  Logger.log('paintChart start');
+  var schedule = getScheduleSheet();
+  var chartStart = baseLine + startDate.diff(baseDate, 'days');
+  Logger.log('chartStart: ' + chartStart);
+  if(chartStart >= columnNum){return;};
+  var duration = finishDate.diff(startDate, 'days')+1;
+  Logger.log('duration: ' + duration);
+  if(chartStart < baseLine){
+    duration -= baseLine-chartStart;
+    Logger.log('new duration: ' + duration);
+    if(duration <= 0){
+      return;
+    } else {
+      if(baseLine+duration > columnNum){
         try{
-          schedule.getRange(top, chartStart, 1, columnNum-chartStart+1).setBackground(color);
+          schedule.getRange(top, baseLine, 1, columnNum-baseLine+1).setBackground(color);
         } catch(e){
           Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
         };
       } else {
         try{
-          schedule.getRange(top, chartStart, 1, duration).setBackground(color);
+          schedule.getRange(top, baseLine, 1, duration).setBackground(color);
         } catch(e){
           Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
         };
       };
     };
   };
+  if (chartStart >= baseLine){
+    if (chartStart+duration > columnNum){
+      try{
+        schedule.getRange(top, chartStart, 1, columnNum-chartStart+1).setBackground(color);
+      } catch(e){
+        Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
+      };
+    } else {
+      try{
+        schedule.getRange(top, chartStart, 1, duration).setBackground(color);
+      } catch(e){
+        Browser.msgBox('System Error (ID ' + schedule.getRange(top, 1).getValue() + ') : ' + e.message);
+      };
+    };
+  };
+};
 
 
-  function checkOverlap(firstStart, firstFinish, secondStart, secondFinish) {
-    Logger.log('checkOverlap start');
-    if(firstStart <= secondFinish && firstFinish >= secondStart) {
-     var isBigger = firstStart >= secondStart ? firstStart : secondStart;
-     var isSmaller = firstFinish <= secondFinish ? firstFinish : secondFinish;
-     return [isBigger, isSmaller];
-   } else {
-     return false;
-   };
- };
+function checkOverlap(firstStart, firstFinish, secondStart, secondFinish) {
+  Logger.log('checkOverlap start');
+  if(firstStart <= secondFinish && firstFinish >= secondStart) {
+    var isBigger = firstStart >= secondStart ? firstStart : secondStart;
+    var isSmaller = firstFinish <= secondFinish ? firstFinish : secondFinish;
+    return [isBigger, isSmaller];
+  } else {
+    return false;
+  };
+};
 
- function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
+function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
   Logger.log('markProgress start');
   var schedule = getScheduleSheet();
   var columnNum = schedule.getMaxColumns();
@@ -442,46 +456,48 @@ function judgeColor(start, finish, progress, isParent){
 
 
 function drawTodayLine() {
- Logger.log('drawTodayLine start');
- var schedule = getScheduleSheet();
- var memo = PropertiesService.getDocumentProperties();
- var today = Moment.moment();
- var baseLine = findStartPoint('progress')+1;
- var baseDate = Moment.moment(memo.getProperty('baseDate'));
- var lastRowOfContents = schedule.getLastRow();
- var nextBaseLine = baseLine + 1;
- var todayLine = baseLine + today.diff(baseDate, 'days');
- var columnNum = schedule.getMaxColumns();
- //delete an old line
- var markInAry = schedule.getRange(2, nextBaseLine, 1, columnNum-nextBaseLine+1).getValues();
- var markColumn = markInAry[0].indexOf('|') + nextBaseLine;
- var targetColumn = schedule.getRange(2, markColumn, lastRowOfContents-2+1, 1);
- var savedValues = targetColumn.getValues();
- if (markColumn-nextBaseLine > 0) {
-   for (var i = 0, len = savedValues.length; i < len; i++) {
-     if (savedValues[i][0] === "="){
-       savedValues[i][0] = "'=";
-     } else {
-       savedValues[i][0] = '';
-     };
-   };
-   targetColumn.setValues(savedValues);
- };
- //drow a new line
- if (nextBaseLine < todayLine) {
-   var todayColumn = schedule.getRange(2, todayLine, lastRowOfContents-2+1, 1);
-   var todayValues = todayColumn.getValues();
-   var verticalLine = [];
-   var ary = [];
-   for (var i = 0, len = todayValues.length; i < len; i++){
-     if(todayValues[i][0] === "="){
-       todayValues[i][0] = "'=";
-     } else {
-       todayValues[i][0] = '|';
-     };
-   };
-   todayColumn.setValues(todayValues);
- };
+  Logger.log('drawTodayLine start');
+  var schedule = getScheduleSheet();
+  var memo = PropertiesService.getDocumentProperties();
+  var timeDiff = memo.getProperty('timeDiff');
+  var today = Moment.moment()
+  today = today.add(timeDiff, 'hours');
+  var baseLine = findStartPoint('progress')+1;
+  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+  var lastRowOfContents = schedule.getLastRow();
+  var nextBaseLine = baseLine + 1;
+  var todayLine = baseLine + today.diff(baseDate, 'days');
+  var columnNum = schedule.getMaxColumns();
+  //delete an old line
+  var markInAry = schedule.getRange(2, nextBaseLine, 1, columnNum-nextBaseLine+1).getValues();
+  var markColumn = markInAry[0].indexOf('|') + nextBaseLine;
+  var targetColumn = schedule.getRange(2, markColumn, lastRowOfContents-2+1, 1);
+  var savedValues = targetColumn.getValues();
+  if (markColumn-nextBaseLine > 0) {
+    for (var i = 0, len = savedValues.length; i < len; i++) {
+      if (savedValues[i][0] === "="){
+        savedValues[i][0] = "'=";
+      } else {
+        savedValues[i][0] = '';
+      };
+    };
+  targetColumn.setValues(savedValues);
+  };
+  //drow a new line
+  if (nextBaseLine <= todayLine) {
+    var todayColumn = schedule.getRange(2, todayLine, lastRowOfContents-2+1, 1);
+    var todayValues = todayColumn.getValues();
+    var verticalLine = [];
+    var ary = [];
+    for (var i = 0, len = todayValues.length; i < len; i++){
+      if(todayValues[i][0] === "="){
+        todayValues[i][0] = "'=";
+      } else {
+        todayValues[i][0] = '|';
+      };
+    };
+    todayColumn.setValues(todayValues);
+  };
 };
 
 
@@ -539,13 +555,15 @@ function formatGantchart(span, date) {
   var chartWidth = 168;
   var rowNum = schedule.getMaxRows();
   var columnNum = schedule.getMaxColumns();
-  memo.setProperty('baseDate', date.format('YYYY/MM/DD'));
   //The number and the width of rows
   adjustColums(baseLine, chartWidth, 25, rowNum, columnNum);
   columnNum = schedule.getMaxColumns();
-  //Change the color in weekdays and holidays
-  paintWeekdays(baseLine, span, '#fcefe3', rowNum, columnNum);
-  paintHolidays(baseLine, date, '#fcefe3', rowNum, columnNum);
+  //hidden baseDate
+  schedule.getRange(2, baseLine).setValue(date.format('YYYY/MM/DD'));
+  //Change the color in weekends and holidays
+  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+  paintWeekends(baseLine, span, '#fcefe3', rowNum, columnNum);
+  paintHolidays(baseLine, baseDate, '#fcefe3', rowNum, columnNum);
   //if the schedule sheet has some contents...
   if (schedule.getLastRow() > 2){
     front_updateChart();
@@ -578,14 +596,14 @@ function adjustColums(baseLine, num, width, rowNum, columnNum){
 };
 
 
-function paintWeekdays(baseLine, span, color, rowNum, columnNum){
-  Logger.log('paintWeekdays start');
+function paintWeekends(baseLine, span, color, rowNum, columnNum){
+  Logger.log('paintWeekends start');
   var wkendStart = 5;
   var schedule = getScheduleSheet();
   var range = schedule.getRange(1, baseLine, rowNum+1, span);
   range.setBorder(null, true, null, true, false, false, "black", SpreadsheetApp.BorderStyle.SOLID);
   schedule.getRange(2, baseLine+wkendStart, rowNum-2+1, 2).setBackground(color);
-  range.copyTo(schedule.getRange(1, baseLine+span, rowNum+1, columnNum-baseLine+span+1));
+  range.copyTo(schedule.getRange(1, baseLine+span, rowNum+1, columnNum-baseLine+span+1), {formatOnly:true});
 };
 
 

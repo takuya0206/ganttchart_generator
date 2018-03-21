@@ -1,10 +1,8 @@
-
 function front_updateChart(){
   Logger.log('front_updateChart start')
   var schedule = getScheduleSheet();
-  var memo = PropertiesService.getDocumentProperties();
   var baseLine = findStartPoint('progress')+1;
-  var baseDate = Moment.moment(memo.getProperty('baseDate'));
+  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
   var startRow = 3;
   var endRow = schedule.getLastRow();
   var data = schedule.getRange(1, 1, endRow, baseLine-1).getValues();
@@ -17,12 +15,11 @@ function front_updateChart(){
 function front_sumAllWnP(){
   Logger.log('front_sumAllWnP start');
   var schedule = getScheduleSheet();
-  var memo = PropertiesService.getDocumentProperties();
   var lastRowOfContents = schedule.getLastRow();
   var baseLine = findStartPoint('progress')+1;
   var baseRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
   var baseData = baseRange.getValues();
-  var baseDate = Moment.moment(memo.getProperty('baseDate'));
+  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
   var formulas = baseRange.getFormulas();
   var indexOfPlannedWorkload = baseData[1].indexOf('plannedWorkload');
   var indexOfProgress = baseData[1].indexOf('progress');
@@ -94,7 +91,7 @@ function front_showParentChart(isChecked){
   var baseLine = findStartPoint('progress')+1;
   var baseRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
   var baseData = baseRange.getValues();
-  var baseDate = Moment.moment(memo.getProperty('baseDate'));
+  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
   var formulas = baseRange.getFormulas();
   var parentTasks = findParentTasks(baseData);
   var indexOfPlannedStart = baseData[1].indexOf('plannedStart');
@@ -125,8 +122,17 @@ function front_showParentChart(isChecked){
 };
 
 function get_parentChart(){
+  Logger.log('get_parentChart start');
   var memo = PropertiesService.getDocumentProperties();
   var isChecked = memo.getProperty('ParentChart');
   isChecked = isChecked === null ? false : isChecked;
   return isChecked;
 };
+
+
+function setTimeDiff(num){
+  Logger.log('setTimeDiff start');
+  var memo = PropertiesService.getDocumentProperties();
+  memo.setProperty('timeDiff', num);
+  Logger.log(num);
+}
