@@ -45,6 +45,7 @@ function createChart(){
   var holiday = getHolidaySheet();
   var ss = getSpreadSheet();
   var memo = PropertiesService.getDocumentProperties();
+  showSidebar();
   if(!holiday){
     try{
       ss.insertSheet('holiday', 2);
@@ -66,7 +67,6 @@ function createChart(){
     var text = lang === 'ja' ? '既にscheduleシートが存在しています。新たに作成をするとこれまでの内容が削除されますがよろしいですか？' : 'You already have the schedule sheet. Please confirm that the existing contents will be deleted if you create a new gantt chart.';
     resetAll(text);
   };
-  showSidebar();
 };
 
 
@@ -127,6 +127,9 @@ function init(){
     'format': format,
     'cellformat': cellformat
   });
+  //dataValidation
+  var rule_date = SpreadsheetApp.newDataValidation().requireDate().build();
+  var rule_int = SpreadsheetApp.newDataValidation().requireNumberGreaterThan(-1).build();
   //format related to items
   schedule.getRange('A:A').setHorizontalAlignment('left').setBackground('#f3f3f3');
   firstRow.setBackground('#f3f3f3');
@@ -144,15 +147,10 @@ function init(){
   schedule.setColumnWidth(indexOfActualWorkload+1, 45);
   schedule.getRange(3, indexOfPlannedWorkload+1,rowNum-3+1, 2).setDataValidation(rule_int);
   schedule.getRange(1, indexOfPlannedWorkload+1, 1, 2).merge();
-  holiday.getRange(1, 1).setNote(note);
-
-  //dataValidation
-  var rule_date = SpreadsheetApp.newDataValidation().requireDate().build();
-  var rule_int = SpreadsheetApp.newDataValidation().requireNumberGreaterThan(-1).build();
   schedule.getRange(3, indexOfProgress+1, rowNum-3+1, 1).setNumberFormat('0.0%').setDataValidation(rule_int);
   schedule.getRange(3, indexOfPlannedStart+1, rowNum-3+1, 4).setNumberFormat(cellformat).setDataValidation(rule_date);
+  holiday.getRange(1, 1).setNote(note);
   holiday.getRange('A:A').setNumberFormat(cellformat).setDataValidation(rule_date);
-
   //adjust the number of rows
   if(rowNum > 200){
     schedule.deleteRows(200, rowNum-200);
@@ -210,11 +208,18 @@ function updateChart(data, startRow, endRow, baseLine, baseDate, ParentTasks){
   var indexOfProgress = data[1].indexOf('progress');
   var columnNum = schedule.getMaxColumns();
   var memo = PropertiesService.getDocumentProperties();
-  var timeDiff = memo.getProperty('timeDiff');
-  var today = Moment.moment()
-  today = today.add(timeDiff, 'hours');
   var isParentChart = memo.getProperty('ParentChart') == 'false' ? false : true;
-  copyDefaultRow(startRow, baseLine, endRow-startRow+1, columnNum-baseLine+1); //initalize　the target range
+
+  //calculate today with time difference for the function: colorIndicator
+  var today = Moment.moment().set('hour', 0).set('minute', 0).set('second', 0);
+  var timeDiff = memo.getProperty('timeDiff');
+  if(timeDiff < 0){
+    today = today.subtract(1, 'days');
+  } else {
+    today = today.add(1, 'days');
+  };
+
+  copyDefaultRow(startRow, baseLine, endRow-startRow+1, columnNum-baseLine+1); //initalize the target range
   for (var i = startRow; i <= endRow; i++){
     var index = i-1;
     var plannedStart = Moment.moment(data[index][indexOfPlannedStart]);
@@ -295,6 +300,7 @@ function copyDefaultRow(row, col, height, width, baseLine, option){
   var saveRange = schedule.getRange(2, col);
   var saveVal = saveRange.getValue();
   saveRange.setValue('');
+
   //copy the default format to the target range
   var range = schedule.getRange(2, col, 1, width);
   if (!option){
@@ -318,19 +324,20 @@ function setMilestone(top, baseLine, baseDate, startDate, finishDate, color, col
 
 
 function judgeColor(start, finish, progress, today, isParent){
-  Logger.log('judgeColor start');
   var color = '';
   var memo = PropertiesService.getDocumentProperties();
   var isRequired = memo.getProperty('colorIndicator');
   if(isRequired === 'true'){
     if(start.isSame(today, 'days') && progress < 1){
-    color = isParent == true ? '#f7c505' : '#ffff00'; //strong yellow : yellow
-  };
-  if(start.isBefore(today, 'days') && progress < 1){
-    var actualProgress = Math.round(finish.diff(start, 'days') * progress);
-    var idealProgress = today.diff(start, 'days');
-    if(actualProgress >= idealProgress){
       color = isParent == true ? '#f7c505' : '#ffff00'; //strong yellow : yellow
+    };
+    if(start.isBefore(today, 'days') && progress < 1){
+      var actualProgress = (finish.diff(start, 'days')+1) * progress;
+      var idealProgress = today.diff(start, 'days')+1;
+      Logger.log('actualProgress: ' + actualProgress);
+      Logger.log('idealProgress: ' + idealProgress);
+      if(actualProgress > idealProgress){
+        color = isParent == true ? '#f7c505' : '#ffff00'; //strong yellow : yellow
       } else {
         color = isParent == true ? '#b60000' : '#ff0000'; //strong red : red
       };
@@ -461,7 +468,7 @@ function drawTodayLine() {
   var memo = PropertiesService.getDocumentProperties();
   var timeDiff = memo.getProperty('timeDiff');
   var today = Moment.moment()
-  today = today.add(timeDiff, 'hours');
+  today = today.subtract(timeDiff, 'days');
   var baseLine = findStartPoint('progress')+1;
   var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
   var lastRowOfContents = schedule.getLastRow();
@@ -524,6 +531,8 @@ function setHolidays(data){
 
 function getHolidays(){
   Logger.log('getHolidays start');
+  var memo = PropertiesService.getDocumentProperties();
+  var timeDiff = memo.getProperty('timeDiff');
   var values = [];
   var startDate = new Date();//from 1st Jan in the current year
   startDate.setMonth(0, 1);
@@ -533,7 +542,7 @@ function getHolidays(){
   endDate.setHours(0, 0, 0, 0);
   //Japanese holidays
   var calendar = CalendarApp.getCalendarById("ja.japanese#holiday@group.v.calendar.google.com");
-  if(!calendar){
+  if(!calendar || timeDiff != -9){
     values[0] = [startDate, 'Sample Holiday']
   } else {
     var holidays = calendar.getEvents(startDate, endDate);

@@ -61,7 +61,7 @@ function onEdit(e) {
     //paint parents' bar if true
     var memo = PropertiesService.getDocumentProperties();
     var isParentChart = memo.getProperty('ParentChart') == 'false' ? false : true;
-    Logger.log(isParentChart);
+    Logger.log('isParentChart: ' + isParentChart);
     if(isParentChart){
       if(selectedItem === 'plannedStart' || selectedItem === 'plannedFinish'){
         Logger.log('show parents\' bar');

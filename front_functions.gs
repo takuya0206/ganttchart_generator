@@ -1,3 +1,4 @@
+
 function front_updateChart(){
   Logger.log('front_updateChart start')
   var schedule = getScheduleSheet();
@@ -134,5 +135,4 @@ function setTimeDiff(num){
   Logger.log('setTimeDiff start');
   var memo = PropertiesService.getDocumentProperties();
   memo.setProperty('timeDiff', num);
-  Logger.log(num);
-}
+};

@@ -153,8 +153,8 @@
     .withSuccessHandler(markCbox_parentChart)
     .get_parentChart();
 
-    //set TimeZone
-    var timeDiff = (date.getHours() - date.getUTCHours() + 24 ) % 24;
+    //set Timediff
+    var timeDiff =  date.getTimezoneOffset() / 60;
     google.script.run.setTimeDiff(timeDiff);
 
     //functions
