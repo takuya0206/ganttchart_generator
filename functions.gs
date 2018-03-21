@@ -324,6 +324,7 @@ function setMilestone(top, baseLine, baseDate, startDate, finishDate, color, col
 
 
 function judgeColor(start, finish, progress, today, isParent){
+  Logger.log('judgeColor start');
   var color = '';
   var memo = PropertiesService.getDocumentProperties();
   var isRequired = memo.getProperty('colorIndicator');
@@ -440,7 +441,7 @@ function markProgress(top, baseLine, baseDate, startDate, finishDate, progress){
     Logger.log('chartStart >= baseLine');
     //if the bar is longer than the total columns, the length is equal to the max columns
     if(chartStart+duration > columnNum){
-      duration = columnNum-chartStart;
+      duration = columnNum-chartStart+1;
     }
     //if the progress is more than 100%, the max is equal to the duration
     var markLength = Math.round(duration * progress) > duration ? duration : Math.round(duration * progress);
@@ -538,8 +539,9 @@ function getHolidays(){
   startDate.setMonth(0, 1);
   startDate.setHours(0, 0, 0, 0);
   var endDate = new Date();//until 31st Dec in the next year
-  endDate.setFullYear(endDate.getFullYear()+1, 11, 31);
+  endDate.setFullYear(endDate.getFullYear()+2, 11, 31);
   endDate.setHours(0, 0, 0, 0);
+  Logger.log(endDate);
   //Japanese holidays
   var calendar = CalendarApp.getCalendarById("ja.japanese#holiday@group.v.calendar.google.com");
   if(!calendar || timeDiff != -9){
@@ -554,16 +556,22 @@ function getHolidays(){
 };
 
 
-function formatGantchart(span, date) {
+function formatGantchart(span, date, chartWidth) {
   Logger.log('formatGantchart');
   var schedule = getScheduleSheet();
   var memo = PropertiesService.getDocumentProperties();
   var baseLine = findStartPoint('progress')+1;
   var date = Moment.moment(date);
   var format = memo.getProperty('format');
-  var chartWidth = 168;
   var rowNum = schedule.getMaxRows();
   var columnNum = schedule.getMaxColumns();
+  var chartWidth = chartWidth;
+  //if refer to the save one if chartWidth is not specified
+  if(chartWidth){
+    memo.setProperty('chartWidth', chartWidth);
+  } else {
+    chartWidth = parseInt(memo.getProperty('chartWidth'));
+  };
   //The number and the width of rows
   adjustColums(baseLine, chartWidth, 25, rowNum, columnNum);
   columnNum = schedule.getMaxColumns();
