@@ -165,8 +165,11 @@ function onEdit(e) {
     Logger.log('for the holiday sheet');
     if(e.range.getColumn() === 1){
       var schedule = getScheduleSheet();
+      var memo = PropertiesService.getDocumentProperties();
       var baseLine = findStartPoint('progress')+1;
       var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+      var timeDiff = parseInt(memo.getProperty('timeDiff'));
+      baseDate = baseDate.subtract(timeDiff, 'hours');
       formatGantchart(7, baseDate);
     };
   };
