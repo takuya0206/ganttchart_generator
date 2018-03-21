@@ -45,6 +45,7 @@ function createChart(){
   var holiday = getHolidaySheet();
   var ss = getSpreadSheet();
   var memo = PropertiesService.getDocumentProperties();
+  memo.setProperty('chartWidth', 168);
   showSidebar();
   if(!holiday){
     try{
@@ -492,7 +493,7 @@ function drawTodayLine() {
   targetColumn.setValues(savedValues);
   };
   //drow a new line
-  if (nextBaseLine <= todayLine) {
+  if (nextBaseLine <= todayLine && todayLine < columnNum) {
     var todayColumn = schedule.getRange(2, todayLine, lastRowOfContents-2+1, 1);
     var todayValues = todayColumn.getValues();
     var verticalLine = [];
@@ -541,7 +542,6 @@ function getHolidays(){
   var endDate = new Date();//until 31st Dec in the next year
   endDate.setFullYear(endDate.getFullYear()+2, 11, 31);
   endDate.setHours(0, 0, 0, 0);
-  Logger.log(endDate);
   //Japanese holidays
   var calendar = CalendarApp.getCalendarById("ja.japanese#holiday@group.v.calendar.google.com");
   if(!calendar || timeDiff != -9){
@@ -566,6 +566,7 @@ function formatGantchart(span, date, chartWidth) {
   var rowNum = schedule.getMaxRows();
   var columnNum = schedule.getMaxColumns();
   var chartWidth = chartWidth;
+
   //if refer to the save one if chartWidth is not specified
   if(chartWidth){
     memo.setProperty('chartWidth', chartWidth);
