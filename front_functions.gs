@@ -134,5 +134,6 @@ function get_parentChart(){
 function setTimeDiff(num){
   Logger.log('setTimeDiff start');
   var memo = PropertiesService.getDocumentProperties();
+  Logger.log('timeDiff: ' + num);
   memo.setProperty('timeDiff', num);
 };

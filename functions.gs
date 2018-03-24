@@ -469,7 +469,8 @@ function drawTodayLine() {
   var schedule = getScheduleSheet();
   var memo = PropertiesService.getDocumentProperties();
   var timeDiff = parseInt(memo.getProperty('timeDiff'));
-  var today = Moment.moment()
+  var today = Moment.moment();
+  today = today.subtract(timeDiff, 'hours');
   var baseLine = findStartPoint('progress')+1;
   var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
   baseDate = baseDate.subtract(timeDiff, 'hours');

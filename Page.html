@@ -206,6 +206,7 @@
     function send_setStartDate(){
       var formObj = document.forms.setStartDate;
       var num = formObj.chartWidth.value*7;
+      console.log(formObj.startDate.value);
       if (isMonday(formObj.startDate.value) == true) {
         if(num <= 0){
           num = 7
@@ -264,6 +265,9 @@
 
     function isMonday(date){
       var day = new Date (date);
+      console.log(day);
+      day.setHours(day.getHours() + timeDiff);
+      console.log(day);
       if(day.getDay() !== 1) {
         $('#confirm').text(textMonday);
         setTimeout(removeMsg, 4000);
