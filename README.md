@@ -1,3 +1,4 @@
+
 # Gantt Chart Generator
 This is an add-on for Google apps script. You can automatically create a gantt chart, which is suitable to manage a small or middle project. English & Japanese are available.
 
@@ -54,7 +55,7 @@ A column | Date | Make a holiday line in pink
 
 Item           | Action                      
 ------------ | --------------------------
-Change Start Date       | Cange start date in a gantt chart          
+Change Start Date and Chart Width       | Change start date<br />Change chart width in week
 Recalculate Workload (plan) & Progress | Calculate all parents' worklaod and progress             
 Repaint Gantt Chart | Repaint all of the Chart         
 Show Color Indication      | Indicate progress like blue means "completed," yellow means "in progress" and red means "delayed"
@@ -87,7 +88,9 @@ GNU General Public License (GPL)
 
  - How do I extend the width of my gantt chart?
 
-The width of a gantt chart can not be changed and is fixed for 168 columns, which means 24 weeks. If you'd like to show after the period, you can do it by using "Change Start Date" in the sidebar.
+~~The width of a gantt chart can not be changed and is fixed for 168 columns, which means 24 weeks. If you'd like to show after the period, you can do it by using "Change Start Date" in the sidebar.~~
+Since many people requested, we have implemented a feature to change the width of your gantt chart. As of 26th March, you can change the width as you like. However, it is not recommended that you extend the width too much because processing speed in spread sheets gets slow as the number of columns increases.
+
 
  - How do I change the color of charts?
 
@@ -102,4 +105,3 @@ In operating our add-on, we may collect and process the following data about you
 * Details of your visits to our website and the resources that you access, including, but not limited to, traffic data, location data, weblogs and other communication data
 * Information that you provide by filling in forms on our website, such as when you registered for information or make a purchase
 * Information provided to us when you communicate with us for any reason.
-
