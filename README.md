@@ -1,4 +1,5 @@
 
+
 # Gantt Chart Generator
 This is an add-on for Google apps script. You can automatically create a gantt chart, which is suitable to manage a small or middle project. English & Japanese are available.
 
@@ -28,36 +29,36 @@ Access the above URL, log in your Google account, and click "＋ Free."
 
 ### Add-on Menu
 
-Item         | Action                     
+Item         | Action
 ---------- | -------------------------
 Create Gantt Chart | Create a schedule sheet and a holiday sheet
-Show Sidebar   | Show a sidebar                 
+Show Sidebar   | Show a sidebar
 
 ### scheudle sheet
 
-Item           | Input  | Action                                    
+Item           | Input  | Action
 ------------ | --- | ----------------------------------------
-Work Breakdown Structure    | String | Assign task ID                                   
-Planned Start & Planned Finish | Date  | Paint a chart in blue                           
-Planned Finish         | Date  | Set a milestone in orange                        
-Actual Start & Actual Finish | Date  | Paint a chart in green（*be hidden in the default）                
-Worklaod(plan)        | Number  | Calculate parent's workload                               
-Progress           | Number  | Place bars in a chart & calculate parent's progress if tasks have workload (plan)  
+Work Breakdown Structure    | String | Assign task ID
+Planned Start & Planned Finish | Date  | Paint a chart in blu
+Planned Finish         | Date  | Set a milestone in orange
+Actual Start & Actual Finish | Date  | Paint a chart in green（*be hidden in the default）
+Worklaod(plan)        | Number  | Calculate parent's workload (sum childrens' workload)
+Progress           | Number  | Place bars in a chart & calculate parent's progress if tasks have workload (plan)
 
 
 ### holiday sheet
 
-Item | Input | Actuon               
+Item | Input | Actuon
 -- | -- | -------------------
 A column | Date | Make a holiday line in pink
 
 ### Sidebar
 
-Item           | Action                      
+Item           | Actio
 ------------ | --------------------------
 Change Start Date and Chart Width       | Change start date<br />Change chart width in week
-Recalculate Workload (plan) & Progress | Calculate all parents' worklaod and progress             
-Repaint Gantt Chart | Repaint all of the Chart         
+Recalculate Workload (plan) & Progress | Calculate all parents' worklaod and progress
+Repaint Gantt Chart | Repaint all of the Chart
 Show Color Indication      | Indicate progress like blue means "completed," yellow means "in progress" and red means "delayed"
 Show Parents' Charts      | Automatically show total duration of parents' charts
 Initalize Gantt Chart          | Initalize schedule sheet and holiday sheet
@@ -68,9 +69,9 @@ Initalize Gantt Chart          | Initalize schedule sheet and holiday sheet
 * Break down tasks in detail like Parent tasks, child tasks and grandchild tasks.
 * Place planned start and planned finish in tasks which you have to watch daily or weekly.
 * Use "show parents' charts" when you check progress from a broad viewpoint.
-* Utilize "workday function." You can refer to A column in holiday sheet and workload (plan).
 * Place workload in man-day.
-* Watch progress by using actual start and actual finish or progress bars.
+* Utilize "workday function." You can refer to A column in holiday sheet and workload (plan).
+* Watch progress by using progress bars or actual start and actual finish.
 * If you use progress bars, you may want to active "Color Indication."
 * If you update numbers in progress column by using functions, charts won't be automatically updated. You need to use "Repaint Gantt Chart."
 
@@ -95,6 +96,14 @@ Since many people requested, we have implemented a feature to change the width o
  - How do I change the color of charts?
 
 The color of charts can not be changed as you like. In the current specification,  Show Color Indication is the function related to change of color.
+
+
+ - How does the workload column works?
+
+In the workload columns there are two items which are “Plan” and “Actual.” The “Actual” does not have to do with any program. This is just space to make a note which allows you to look back your project after it finished.
+The role of “Plan” is a criterion of weighted average for the parents‘ tasks in the progress column, which means that parents’s progress always shows 0% unless you enter planned workload.
+Note: only parents tasks have the program of auto calculation. If you enter child’s workload, parents’ and (if any) grandparents’ workload and progress will be calculated.
+
 
 ## Privacy Policy
 We treat your privacy with respect and it is secured and will never be sold, shared or rented to third parties.
