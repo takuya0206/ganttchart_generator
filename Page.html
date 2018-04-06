@@ -87,14 +87,11 @@
         <input type="button" class="create" value="" onclick="send_reset()">
       </form>
     </div>
-
-
   </div>
 
 
   <hr width="95%">
   <div class="container">
-    <div id="msg"></div>
     <p id="confirm"> </p>
   </div>
 
@@ -115,7 +112,7 @@
     var linkInquire = 'https://goo.gl/forms/wIVNPWzGOUtbT6ot2';
     var linkHowto = lang === 'ja' ? 'http://takuya0206.hateblo.jp/entry/ganttchart_generator' : 'https://github.com/takuya0206/ganttchart_generator';
     var textTitle = lang === 'ja' ? 'ガントチャートの操作' : 'Edit Gantt Chart';
-    var textSetStart = lang === 'ja' ? 'ガントチャートの開始日と表示期間を変更' : 'Change Start Date and Chart Width ';
+    var textSetStart = lang === 'ja' ? 'ガントチャートの開始日と表示期間を変更' : 'Change Start Date and Chart Width';
     var textRecal = lang === 'ja' ? '工数（予）と進捗の再計算' : 'Recalculate Workload (plan) & Progress';
     var textRedo = lang === 'ja' ? 'ガントチャートの再色塗り' : 'Repaint Gantt Chart';
     var textReset = lang === 'ja' ? 'ガンチャートの初期化' : 'Initalize Gantt Chart';
@@ -124,6 +121,7 @@
     var textConfirm = lang === 'ja' ? '全てのデータが削除されます。よろしいでしょうか？' : 'Please confirm. All of the data will be deleted.'
     var textCbox_colorIndicator = lang === 'ja' ? '進捗別の色表記' : 'Show Color Indication';
     var textCbox_parentChart = lang === 'ja' ? '親タスクの自動反映' : 'Show Parents\' Charts';
+
     var date = new Date();
 
     $('#Donation').text(textDonation);
@@ -206,7 +204,6 @@
     function send_setStartDate(){
       var formObj = document.forms.setStartDate;
       var num = formObj.chartWidth.value*7;
-      console.log(formObj.startDate.value);
       if (isMonday(formObj.startDate.value) == true) {
         if(num <= 0){
           num = 7
@@ -265,9 +262,8 @@
 
     function isMonday(date){
       var day = new Date (date);
-      console.log(day);
+      timeDiff = checkDST(day);
       day.setHours(day.getHours() + timeDiff);
-      console.log(day);
       if(day.getDay() !== 1) {
         $('#confirm').text(textMonday);
         setTimeout(removeMsg, 4000);
@@ -275,6 +271,14 @@
       };
       return true;
     };
+
+    function checkDST(date){
+      var timeDiffs = [];
+      for(var i = 0; i < 12; i++){
+        timeDiffs.push(new Date(date.getFullYear(), i, date.getDate()).getTimezoneOffset() / 60);
+      }
+      return timeDiffs[date.getMonth()];
+    }
 
   </script>
 </body>
