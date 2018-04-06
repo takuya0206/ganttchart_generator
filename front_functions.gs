@@ -77,7 +77,7 @@ function colorIndicator(isChecked){
 function get_colorIndicator(){
   var memo = PropertiesService.getDocumentProperties();
   var isChecked = memo.getProperty('colorIndicator');
-  isChecked = isChecked === null ? false : isChecked;
+  isChecked = (isChecked == null　|| isChecked == '') ? false : isChecked;
   return isChecked;
 };
 
@@ -126,7 +126,8 @@ function get_parentChart(){
   Logger.log('get_parentChart start');
   var memo = PropertiesService.getDocumentProperties();
   var isChecked = memo.getProperty('ParentChart');
-  isChecked = isChecked === null ? false : isChecked;
+  isChecked = (isChecked == null　|| isChecked == '') ? false : isChecked;
+  memo.setProperty('ParentChart', isChecked);
   return isChecked;
 };
 
@@ -137,3 +138,5 @@ function setTimeDiff(num){
   Logger.log('timeDiff: ' + num);
   memo.setProperty('timeDiff', num);
 };
+
+

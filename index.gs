@@ -60,7 +60,7 @@ function onEdit(e) {
     Logger.log('start or finish is edited');
     //paint parents' bar if true
     var memo = PropertiesService.getDocumentProperties();
-    var isParentChart = memo.getProperty('ParentChart') == 'false' ? false : true;
+    var isParentChart = memo.getProperty('ParentChart') == 'true' ? true : false;
     Logger.log('isParentChart: ' + isParentChart);
     if(isParentChart){
       if(selectedItem === 'plannedStart' || selectedItem === 'plannedFinish'){

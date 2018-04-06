@@ -209,7 +209,7 @@ function updateChart(data, startRow, endRow, baseLine, baseDate, ParentTasks){
   var indexOfProgress = data[1].indexOf('progress');
   var columnNum = schedule.getMaxColumns();
   var memo = PropertiesService.getDocumentProperties();
-  var isParentChart = memo.getProperty('ParentChart') == 'false' ? false : true;
+  var isParentChart = memo.getProperty('ParentChart') == 'true' ? true : false;
 
   //calculate today with time difference for the function: colorIndicator
   var today = Moment.moment().set('hour', 0).set('minute', 0).set('second', 0);
