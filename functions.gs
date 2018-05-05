@@ -297,11 +297,6 @@ function showDateErrorMsg(row){
 function copyDefaultRow(row, col, height, width, baseLine, option){
   Logger.log('copyDefaultRow start');
   var schedule = getScheduleSheet();
-  //delete baseDate
-  var saveRange = schedule.getRange(2, col);
-  var saveVal = saveRange.getValue();
-  saveRange.setValue('');
-
   //copy the default format to the target range
   var range = schedule.getRange(2, col, 1, width);
   if (!option){
@@ -309,8 +304,6 @@ function copyDefaultRow(row, col, height, width, baseLine, option){
   } else {
     range.copyTo(schedule.getRange(row, col, height, width), {contentsOnly:true})
   };
-  //restore baseDate
-  saveRange.setValue(saveVal);
 };
 
 
@@ -472,7 +465,7 @@ function drawTodayLine() {
   var today = Moment.moment();
   today = today.subtract(timeDiff, 'hours');
   var baseLine = findStartPoint('progress')+1;
-  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+  var baseDate = Moment.moment(schedule.getRange(1, baseLine).getValue());
   baseDate = baseDate.subtract(timeDiff, 'hours');
   var lastRowOfContents = schedule.getLastRow();
   var nextBaseLine = baseLine + 1;
@@ -574,32 +567,32 @@ function formatGantchart(span, date, chartWidth) {
   } else {
     chartWidth = parseInt(memo.getProperty('chartWidth'));
   };
-  //The number and the width of rows
+  //The number and the width of columns
   adjustColums(baseLine, chartWidth, 25, rowNum, columnNum);
   columnNum = schedule.getMaxColumns();
-  //hidden baseDate
-  schedule.getRange(2, baseLine).setValue(date.format('YYYY/MM/DD'));
+
   //Change the color in weekends and holidays
-  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
   paintWeekends(baseLine, span, '#fcefe3', rowNum, columnNum);
-  paintHolidays(baseLine, baseDate, '#fcefe3', rowNum, columnNum);
-  //if the schedule sheet has some contents...
-  if (schedule.getLastRow() > 2){
-    front_updateChart();
-  };
+  paintHolidays(baseLine, date, '#fcefe3', rowNum, columnNum);
+
   //write date
   var calDate = date;
   var chartRange = schedule.getRange(1, baseLine, 1, columnNum-baseLine+1);
   var chartData = chartRange.getValues();
   chartRange.setHorizontalAlignment('left');
-  chartData[0][0] = '(' + calDate.format(format) + ')';
+  chartData[0][0] = calDate.format(format);
   for (var i = 1, len = chartData[0].length; i < len; i++){
     if(i % 7 === 0){
       calDate = calDate.add(span, 'days');
-      chartData[0][i] = '(' + calDate.format(format) + ')';
+      chartData[0][i] = calDate.format(format);
     };
   };
   chartRange.setValues(chartData);
+ 
+ //if the schedule sheet has some contents...
+  if (schedule.getLastRow() > 2){
+    front_updateChart();
+  };
 };
 
 
@@ -610,8 +603,19 @@ function adjustColums(baseLine, num, width, rowNum, columnNum){
   schedule.setColumnWidth(baseLine, width);
   schedule.getRange(1, baseLine, rowNum, 1).clearContent();
   schedule.getRange(2, baseLine, rowNum-2+1, 1).setBackground('');
+
+  //remove filter if any
+  var isFilter = schedule.getFilter();
+  if(isFilter) {isFilter.remove();}
+
+  //make one week span columns
   schedule.deleteColumns(baseLine+1,deleteNum);
-  schedule.insertColumnsAfter(baseLine, num-1);
+  schedule.insertColumnsAfter(baseLine, 6);
+  var mergedRange = schedule.getRange(1, baseLine, 1, 7)
+  schedule.getRange(1, baseLine, 1, 7).merge();
+
+  //copy the one for all
+  schedule.insertColumnsAfter(baseLine+6, num-1-6);
 };
 
 
@@ -630,6 +634,9 @@ function paintHolidays(baseLine, date, color, rowNum, columnNum){
   Logger.log('paintHolidays start');
   var schedule = getScheduleSheet();
   var holiday = getHolidaySheet();
+  var memo = PropertiesService.getDocumentProperties();
+  var timeDiff = parseInt(memo.getProperty('timeDiff'));
+
   try{
     var data = holiday.getRange(1, 1, holiday.getLastRow(), 1).getValues();
   }
@@ -637,8 +644,10 @@ function paintHolidays(baseLine, date, color, rowNum, columnNum){
     Logger.log('No holidays: ' + e.message);
     return;
   };
+
   for (var i = 0, len = data.length; i < len; i++){
-    var diff = Moment.moment(data[i][0]).diff(date, 'days');
+    var holiday_date = Moment.moment(data[i][0]).subtract(timeDiff, 'hours')
+    var diff = holiday_date.diff(date, 'days');
     if (0 <= diff && diff <= columnNum-baseLine){
       schedule.getRange(2, baseLine+diff, rowNum-2+1, 1).setBackground(color);
     };

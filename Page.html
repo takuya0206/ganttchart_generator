@@ -107,7 +107,7 @@
 
     var lang = (window.navigator.languages && window.navigator.languages[0]) || window.navigator.language || window.navigator.userLanguage || window.navigator.browserLanguage;
     var textDonation = lang === 'ja' ? '投げ銭' : 'Donation';
-    var textInquire = lang === 'ja' ? '問い合せ' : 'Inquire';
+    var textInquire = lang === 'ja' ? '問い合せ' : 'Inquiry';
     var textHowto = lang === 'ja' ? '使い方' : 'How to Use';
     var linkInquire = 'https://goo.gl/forms/wIVNPWzGOUtbT6ot2';
     var linkHowto = lang === 'ja' ? 'http://takuya0206.hateblo.jp/entry/ganttchart_generator' : 'https://github.com/takuya0206/ganttchart_generator';
@@ -117,7 +117,7 @@
     var textRedo = lang === 'ja' ? 'ガントチャートの再色塗り' : 'Repaint Gantt Chart';
     var textReset = lang === 'ja' ? 'ガンチャートの初期化' : 'Initalize Gantt Chart';
     var textButton = lang === 'ja' ? '実行' : 'Done';
-    var textMonday = lang === 'ja' ? '月曜日を設定してください。' : 'Start date should be Monday.'
+    var textSpecifyDay = lang === 'ja' ? '月曜日もしくは日曜日を設定してください。' : 'Start date should be Monday or Sunday.'
     var textConfirm = lang === 'ja' ? '全てのデータが削除されます。よろしいでしょうか？' : 'Please confirm. All of the data will be deleted.'
     var textCbox_colorIndicator = lang === 'ja' ? '進捗別の色表記' : 'Show Color Indication';
     var textCbox_parentChart = lang === 'ja' ? '親タスクの自動反映' : 'Show Parents\' Charts';
@@ -264,8 +264,8 @@
       var day = new Date (date);
       timeDiff = checkDST(day);
       day.setHours(day.getHours() + timeDiff);
-      if(day.getDay() !== 1) {
-        $('#confirm').text(textMonday);
+      if(day.getDay() !== 1 && day.getDay() !== 0) {//accepted Sunday for Islamic calendar
+        $('#confirm').text(textSpecifyDay);
         setTimeout(removeMsg, 4000);
         return false;
       };

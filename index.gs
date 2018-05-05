@@ -47,7 +47,7 @@ function onEdit(e) {
     var lastRowOfContents = schedule.getLastRow();
     var selectedItem = schedule.getRange(2, editedColumn).getValue();
     var baseLine = findStartPoint('progress')+1;
-    var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+    var baseDate = Moment.moment(schedule.getRange(1, baseLine).getValue());
     var baseRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
     var baseData = baseRange.getValues();
 
@@ -167,10 +167,11 @@ function onEdit(e) {
       var schedule = getScheduleSheet();
       var memo = PropertiesService.getDocumentProperties();
       var baseLine = findStartPoint('progress')+1;
-      var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+      var baseDate = Moment.moment(schedule.getRange(1, baseLine).getValue());
       var timeDiff = parseInt(memo.getProperty('timeDiff'));
       baseDate = baseDate.subtract(timeDiff, 'hours');
       formatGantchart(7, baseDate);
+
     };
   };
 };

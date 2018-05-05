@@ -81,6 +81,7 @@ Initalize Gantt Chart          | Initalize schedule sheet and holiday sheet
 * Do not insert rows before the item row.
 * Do not edit or delete the hidden second row.
 * Do not insert columns between the start and the finish date column and after the progress column.
+* Do not edit date in a gantt chart
 
 ## License
 GNU General Public License (GPL)

@@ -3,7 +3,7 @@ function front_updateChart(){
   Logger.log('front_updateChart start')
   var schedule = getScheduleSheet();
   var baseLine = findStartPoint('progress')+1;
-  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+  var baseDate = Moment.moment(schedule.getRange(1, baseLine).getValue());
   var startRow = 3;
   var endRow = schedule.getLastRow();
   var data = schedule.getRange(1, 1, endRow, baseLine-1).getValues();
@@ -20,7 +20,7 @@ function front_sumAllWnP(){
   var baseLine = findStartPoint('progress')+1;
   var baseRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
   var baseData = baseRange.getValues();
-  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+  var baseDate = Moment.moment(schedule.getRange(1, baseLine).getValue());
   var formulas = baseRange.getFormulas();
   var indexOfPlannedWorkload = baseData[1].indexOf('plannedWorkload');
   var indexOfProgress = baseData[1].indexOf('progress');
@@ -77,7 +77,7 @@ function colorIndicator(isChecked){
 function get_colorIndicator(){
   var memo = PropertiesService.getDocumentProperties();
   var isChecked = memo.getProperty('colorIndicator');
-  isChecked = (isChecked == null　|| isChecked == '') ? false : isChecked;
+  isChecked = (isChecked == null || isChecked == '') ? false : isChecked;
   return isChecked;
 };
 
@@ -92,7 +92,7 @@ function front_showParentChart(isChecked){
   var baseLine = findStartPoint('progress')+1;
   var baseRange = schedule.getRange(1, 1, lastRowOfContents, baseLine-1);
   var baseData = baseRange.getValues();
-  var baseDate = Moment.moment(schedule.getRange(2, baseLine).getValue());
+  var baseDate = Moment.moment(schedule.getRange(1, baseLine).getValue());
   var formulas = baseRange.getFormulas();
   var parentTasks = findParentTasks(baseData);
   var indexOfPlannedStart = baseData[1].indexOf('plannedStart');
@@ -126,7 +126,7 @@ function get_parentChart(){
   Logger.log('get_parentChart start');
   var memo = PropertiesService.getDocumentProperties();
   var isChecked = memo.getProperty('ParentChart');
-  isChecked = (isChecked == null　|| isChecked == '') ? false : isChecked;
+  isChecked = (isChecked == null || isChecked == '') ? false : isChecked;
   memo.setProperty('ParentChart', isChecked);
   return isChecked;
 };
