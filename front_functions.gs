@@ -138,5 +138,3 @@ function setTimeDiff(num){
   Logger.log('timeDiff: ' + num);
   memo.setProperty('timeDiff', num);
 };
-
-

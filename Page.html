@@ -90,6 +90,7 @@
   </div>
 
 
+
   <hr width="95%">
   <div class="container">
     <p id="confirm"> </p>
@@ -118,9 +119,10 @@
     var textReset = lang === 'ja' ? 'ガンチャートの初期化' : 'Initalize Gantt Chart';
     var textButton = lang === 'ja' ? '実行' : 'Done';
     var textSpecifyDay = lang === 'ja' ? '月曜日もしくは日曜日を設定してください。' : 'Start date should be Monday or Sunday.'
-    var textConfirm = lang === 'ja' ? '全てのデータが削除されます。よろしいでしょうか？' : 'Please confirm. All of the data will be deleted.'
+    var textConfirm = lang === 'ja' ? 'ガントチャートを初期化します。よろしいでしょうか？' : 'Please confirm. Your gantt chart will be initialized.'
     var textCbox_colorIndicator = lang === 'ja' ? '進捗別の色表記' : 'Show Color Indication';
     var textCbox_parentChart = lang === 'ja' ? '親タスクの自動反映' : 'Show Parents\' Charts';
+
 
     var date = new Date();
 
@@ -155,8 +157,9 @@
     .get_parentChart();
 
     //set Timediff
-    var timeDiff =  date.getTimezoneOffset() / 60;
+    var timeDiff = date.getTimezoneOffset() / 60;
     google.script.run.setTimeDiff(timeDiff);
+    console.log('timeDiff', timeDiff);
 
     //functions
     function markCbox_colorIndicator(data){

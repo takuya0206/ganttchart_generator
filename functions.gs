@@ -41,12 +41,13 @@ function showSidebar() {
 
 function createChart(){
   Logger.log('createChart start');
+  showSidebar();
+  Utilities.sleep(5000);
   var schedule = getScheduleSheet();
   var holiday = getHolidaySheet();
   var ss = getSpreadSheet();
   var memo = PropertiesService.getDocumentProperties();
   memo.setProperty('chartWidth', 168);
-  showSidebar();
   if(!holiday){
     try{
       ss.insertSheet('holiday', 2);
@@ -76,6 +77,24 @@ function resetAll(msg){
   var ss = getSpreadSheet();
   var schedule = getScheduleSheet();
   var holiday = getHolidaySheet();
+
+   if(!holiday){
+    try{
+      ss.insertSheet('holiday', 2);
+      holiday = getHolidaySheet();
+    } catch(e){
+      Logger.log(e.message);
+    };
+  };
+  if(!schedule){
+    try{
+      ss.insertSheet('schedule', 1);
+      schedule = getScheduleSheet();
+    } catch(e){
+      Logger.log(e.message);
+    };
+  }
+
   var isComfirmed = Browser.msgBox(msg, Browser.Buttons.YES_NO);
   if(isComfirmed === 'yes'){
     schedule.clear();
@@ -528,7 +547,7 @@ function setHolidays(data){
 function getHolidays(){
   Logger.log('getHolidays start');
   var memo = PropertiesService.getDocumentProperties();
-  var timeDiff = memo.getProperty('timeDiff');
+  var timeDiff = parseInt(memo.getProperty('timeDiff'));
   var values = [];
   var startDate = new Date();//from 1st Jan in the current year
   startDate.setMonth(0, 1);
@@ -538,6 +557,7 @@ function getHolidays(){
   endDate.setHours(0, 0, 0, 0);
   //Japanese holidays
   var calendar = CalendarApp.getCalendarById("ja.japanese#holiday@group.v.calendar.google.com");
+  Logger.log('Time diff: ' + timeDiff)
   if(!calendar || timeDiff != -9){
     values[0] = [startDate, 'Sample Holiday']
   } else {
@@ -588,7 +608,7 @@ function formatGantchart(span, date, chartWidth) {
     };
   };
   chartRange.setValues(chartData);
- 
+
  //if the schedule sheet has some contents...
   if (schedule.getLastRow() > 2){
     front_updateChart();
@@ -636,6 +656,7 @@ function paintHolidays(baseLine, date, color, rowNum, columnNum){
   var holiday = getHolidaySheet();
   var memo = PropertiesService.getDocumentProperties();
   var timeDiff = parseInt(memo.getProperty('timeDiff'));
+  Logger.log('timeDiff: ' + timeDiff)
 
   try{
     var data = holiday.getRange(1, 1, holiday.getLastRow(), 1).getValues();
