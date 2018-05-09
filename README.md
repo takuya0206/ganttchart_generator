@@ -60,7 +60,7 @@ Item           | Actio
 Change Start Date and Chart Width       | Change start date<br />Change chart width in week
 Recalculate Workload (plan) & Progress | Calculate all parents' worklaod and progress
 Repaint Gantt Chart | Repaint all of the Chart
-Show Color Indication      | Indicate progress like blue means "completed," yellow means "in progress" and red means "delayed"
+Show Color Indication      | Indicate progress like blue means "completed" or "not start," yellow means "in progress" and red means "delayed"
 Show Parents' Charts      | Automatically show total duration of parents' charts
 Initalize Gantt Chart          | Initalize schedule sheet and holiday sheet
 
@@ -89,15 +89,22 @@ GNU General Public License (GPL)
 
 ## FAQ
 
+ - The painting function does not work in my gantt chart..
+
+This add-on is sometimes updated without notification. In most of those cases, you can activate the new version by using "Change Start Date," If your gantt chart still does not work, you may have to create a new spreadsheet and use this add-on from scratch. Then, you transfer the date from the previous one by copy & paste.
+
+ - I got a system error when using sidebar...
+
+There is possibility that a problem related to authority has occurred. Please try to delete browser cache. If you are using Google docs with more than two IDs at the same time, please use only one ID or utilize something like a secret browser which means there is no cache.
+
  - How do I extend the width of my gantt chart?
 
-~~The width of a gantt chart can not be changed and is fixed for 168 columns, which means 24 weeks. If you'd like to show after the period, you can do it by using "Change Start Date" in the sidebar.~~
-Since many people requested, we have implemented a feature to change the width of your gantt chart. As of 26th March, you can change the width as you like. However, it is not recommended that you extend the width too much because processing speed in spread sheets gets slow as the number of columns increases.
+You can change the width on the sidebar. However, it is not recommended that you extend the width too much because processing speed in spread sheets gets slow as the number of columns increases.
 
 
  - How do I change the color of charts?
 
-The color of charts can not be changed as you like. In the current specification,  Show Color Indication is the function related to change of color.
+The color of charts can not be changed as you like. In the current specification,  Show Color Indication is the function related to change of color, which shows .
 
 
  - How does the workload column works?
@@ -106,9 +113,8 @@ In the workload columns there are two items which are “Plan” and “Actual.�
 The role of “Plan” is a criterion of weighted average for the parents‘ tasks in the progress column, which means that parents’s progress always shows 0% unless you enter planned workload.
 Note: only parents tasks have the program of auto calculation. If you enter child’s workload, parents’ and (if any) grandparents’ workload and progress will be calculated.
 
- - I got a system error when using sidebar...
 
-There is possibility that a problem related to authority has occured. Please try to delete browser cache. If you are using Google docs with more than two IDs at the same time, please use only one ID or utilize something like a secret browser which measn there is no cache.
+
 
 
 ## Privacy Policy
