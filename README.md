@@ -1,5 +1,6 @@
 
 
+
 # Gantt Chart Generator
 This is an add-on for Google apps script. You can automatically create a gantt chart, which is suitable to manage a small or middle project. English & Japanese are available.
 
@@ -104,6 +105,10 @@ The color of charts can not be changed as you like. In the current specification
 In the workload columns there are two items which are “Plan” and “Actual.” The “Actual” does not have to do with any program. This is just space to make a note which allows you to look back your project after it finished.
 The role of “Plan” is a criterion of weighted average for the parents‘ tasks in the progress column, which means that parents’s progress always shows 0% unless you enter planned workload.
 Note: only parents tasks have the program of auto calculation. If you enter child’s workload, parents’ and (if any) grandparents’ workload and progress will be calculated.
+
+ - I got a system error when using sidebar...
+
+There is possibility that a problem related to authority has occured. Please try to delete browser cache. If you are using Google docs with more than two IDs at the same time, please use only one ID or utilize something like a secret browser which measn there is no cache.
 
 
 ## Privacy Policy
