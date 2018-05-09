@@ -129,8 +129,8 @@ function init(){
   ['id', 'lv1','lv2','lv3','lv4','lv5','plannedStart', 'plannedFinish', 'actualStart', 'actualFinish', 'plannedWorkload', 'actualWorkload', 'responsiblity', 'progress']
   ];
   var note = lang === 'ja' ? '手動で祝日を編集するときは、必ず日付をA列に入力してください。': 'When editing holidays, please set date only in the A column.';
-  var format = lang === 'ja' ? 'YYYY/MM/DD' : 'MM/DD/YYYY';
-  var cellformat = lang === 'ja' ? 'yyyy/mm/dd':  'mm/dd/yyyy';
+  var format = 'YYYY/MM/DD';
+  var cellformat = 'yyyy/mm/dd';
   var scheduleItemsLength = scheduleItems[0].length;
   var firstRow = schedule.getRange('1:1');
   var range = schedule.getRange(1, 1, 2, scheduleItemsLength);
