@@ -1,6 +1,7 @@
 
 
 
+
 # Gantt Chart Generator
 This is an add-on for Google apps script. You can automatically create a gantt chart, which is suitable to manage a small or middle project. English & Japanese are available.
 
@@ -104,7 +105,7 @@ You can change the width on the sidebar. However, it is not recommended that you
 
  - How do I change the color of charts?
 
-The color of charts can not be changed as you like. In the current specification,  Show Color Indication is the function related to change of color, which shows .
+The color of charts can not be changed as you like. In the current specification,  Show Color Indication is the function related to change of color, which shows blue means "completed" or "not yet start," yellow means "in progress," and red means "delayed".
 
 
  - How does the workload column works?
