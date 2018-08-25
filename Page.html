@@ -234,16 +234,21 @@
 
     // add by Nute16
     function send_slideDates(){
-      var days = document.forms.setSlideDays.slideDays.value;
-      startWait();
-      google.script.run
-      .withSuccessHandler(successMsg)
-      .withFailureHandler(errorMsg)
-      .slideDates(days);
-      google.script.run
-      .withSuccessHandler(successMsg)
-      .withFailureHandler(errorMsg)
-      .front_updateChart();
+      var days = parseInt(document.forms.setSlideDays.slideDays.value);
+      if(days){
+        startWait();
+        google.script.run
+        .withSuccessHandler(successMsg)
+        .withFailureHandler(errorMsg)
+        .slideDates(days);
+        startWait();
+        google.script.run
+        .withSuccessHandler(successMsg)
+        .withFailureHandler(errorMsg)
+        .front_updateChart();
+      }else{
+        return;
+      }
     };
 
     $('#Donation').on( 'click', function(){
