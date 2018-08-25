@@ -56,6 +56,17 @@
       </form>
     </div>
 
+    <!-- add by Nute16 -->
+    <div class="block form-group">
+      <label id="SlideDates"></label>
+      <form name="setSlideDays">
+        <input name="slideDays" type="number" style="width: 50px"> days
+        <div>
+        <input type="button" class="action" value="" onclick="send_slideDates();">
+        </div>
+      </form>
+    </div>
+
     <div class="block form-group">
       <label id="Recal"></label>
       <form name="recalculate">
@@ -114,6 +125,7 @@
     var linkHowto = lang === 'ja' ? 'http://takuya0206.hateblo.jp/entry/ganttchart_generator' : 'https://github.com/takuya0206/ganttchart_generator';
     var textTitle = lang === 'ja' ? 'ガントチャートの操作' : 'Edit Gantt Chart';
     var textSetStart = lang === 'ja' ? 'ガントチャートの開始日と表示期間を変更' : 'Change Start Date and Chart Width';
+    var textSlideDates = lang === 'ja' ? '選択範囲内の日付をスライド（+/-）' : 'Slide the date within the selected range(+/-)';//add by Nute16
     var textRecal = lang === 'ja' ? '工数（予）と進捗の再計算' : 'Recalculate Workload (plan) & Progress';
     var textRedo = lang === 'ja' ? 'ガントチャートの再色塗り' : 'Repaint Gantt Chart';
     var textReset = lang === 'ja' ? 'ガンチャートの初期化' : 'Initalize Gantt Chart';
@@ -133,6 +145,7 @@
     $('#Howto').attr("href", linkHowto);
     $('#Title').text(textTitle);
     $('#SetStart').text(textSetStart);
+    $('#SlideDates').text(textSlideDates);// add by Nute16
     $('#Recal').text(textRecal);
     $('#Redo').text(textRedo);
     $('#Reset').text(textReset);
@@ -217,6 +230,20 @@
         .withFailureHandler(errorMsg)
         .formatGantchart(7, formObj.startDate.value, num);
       };
+    };
+
+    // add by Nute16
+    function send_slideDates(){
+      var days = document.forms.setSlideDays.slideDays.value;
+      startWait();
+      google.script.run
+      .withSuccessHandler(successMsg)
+      .withFailureHandler(errorMsg)
+      .slideDates(days);
+      google.script.run
+      .withSuccessHandler(successMsg)
+      .withFailureHandler(errorMsg)
+      .front_updateChart();
     };
 
     $('#Donation').on( 'click', function(){

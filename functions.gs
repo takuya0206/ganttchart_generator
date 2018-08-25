@@ -963,3 +963,24 @@ function makeParentBold(data, range){
  };
  range.setFontWeights(info);
 };
+
+/**
+ * This function slide the date within the selected cell by the number of days set in the side menu. After the process, you need repaint the Gantt chart.
+ * (Nodes) When multiple ranges are selected, only the last selected range will be processed.This is due to the specification of getActiveRange ().
+ * @param  {integer} days [Number of days set in the side menu.]
+ */
+function slideDates(days) {
+  Logger.log('slideDates start');
+  var range = SpreadsheetApp.getActiveRange();
+  var cells = range.getValues();
+  var rowLen = range.getNumRows();
+  var columnLen = range.getNumColumns();
+  for (var i = 0; i < rowLen; i++) {
+    for (var j = 0; j < columnLen; j++) {
+      if (toString.call(cells[i][j]).slice(8, -1).toLowerCase() == 'date') {
+        cells[i][j].setDate(cells[i][j].getDate() + days);
+      }
+    }
+  }
+  range.setValues(cells);
+}
