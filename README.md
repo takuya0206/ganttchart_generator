@@ -108,14 +108,9 @@ You can change the width on the sidebar. However, it is not recommended that you
 The color of charts can not be changed as you like. In the current specification,  Show Color Indication is the function related to change of color, which shows blue means "completed" or "not yet start," yellow means "in progress," and red means "delayed".
 
 
- - How does the workload column works?
+ - Parents' progress always show zero...
 
-In the workload columns there are two items which are “Plan” and “Actual.” The “Actual” does not have to do with any program. This is just space to make a note which allows you to look back your project after it finished.
-The role of “Plan” is a criterion of weighted average for the parents‘ tasks in the progress column, which means that parents’s progress always shows 0% unless you enter planned workload.
-Note: only parents tasks have the program of auto calculation. If you enter child’s workload, parents’ and (if any) grandparents’ workload and progress will be calculated.
-
-
-
+Parents' progress are calculated based on the weighted average of their child's workload, which means that parents’s progress always shows 0% unless you enter "planned workload." Note: "Actual workload" does not have to do with any program. This is just space to make a note which allows you to look back your project after it finished.
 
 
 ## Privacy Policy
