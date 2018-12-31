@@ -9,8 +9,8 @@ function front_updateChart(){
   var data = schedule.getRange(1, 1, endRow, baseLine-1).getValues();
   var parentTasks = findParentTasks(data);
   if(startRow > endRow){return;}; //No contents
-  updateChart(data, startRow, endRow, baseLine, baseDate, parentTasks);
   drawTodayLine();
+  updateChart(data, startRow, endRow, baseLine, baseDate, parentTasks);
 };
 
 function front_sumAllWnP(){

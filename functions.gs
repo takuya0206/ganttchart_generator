@@ -184,6 +184,7 @@ function setDailyTiggers(){
   Logger.log('setDailyTiggers start');
   var ss = getSpreadSheet();
   //GAS-based function
+
   function createTimeDrivenTriggers() {
     ScriptApp.newTrigger('front_updateChart')
     .timeBased()
@@ -490,21 +491,28 @@ function drawTodayLine() {
   var nextBaseLine = baseLine + 1;
   var todayLine = baseLine + today.diff(baseDate, 'days');
   var columnNum = schedule.getMaxColumns();
+
   //delete an old line
   var markInAry = schedule.getRange(2, nextBaseLine, 1, columnNum-nextBaseLine+1).getValues();
-  var markColumn = markInAry[0].indexOf('|') + nextBaseLine;
-  var targetColumn = schedule.getRange(2, markColumn, lastRowOfContents-2+1, 1);
-  var savedValues = targetColumn.getValues();
-  if (markColumn-nextBaseLine > 0) {
-    for (var i = 0, len = savedValues.length; i < len; i++) {
-      if (savedValues[i][0] === "="){
-        savedValues[i][0] = "'=";
-      } else {
-        savedValues[i][0] = '';
+  for(var i = 0, len = markInAry[0].length; i < len; i++){
+    if(markInAry[0][i] === '|') {
+      var markColumn = i + nextBaseLine;
+      var targetColumn = schedule.getRange(2, markColumn, lastRowOfContents-2+1, 1);
+      var savedValues = targetColumn.getValues();
+      if (markColumn-nextBaseLine > 0) {
+        for (var j = 0, len = savedValues.length; j < len; j++) {
+          if (savedValues[j][0] === "="){
+            savedValues[j][0] = "'=";
+          } else {
+            savedValues[j][0] = '';
+          };
+        };
+      targetColumn.setValues(savedValues);
       };
     };
-  targetColumn.setValues(savedValues);
   };
+
+
   //drow a new line
   if (nextBaseLine <= todayLine && todayLine < columnNum) {
     var todayColumn = schedule.getRange(2, todayLine, lastRowOfContents-2+1, 1);
