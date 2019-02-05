@@ -98,6 +98,12 @@ This add-on is sometimes updated without notification. In most of those cases, y
 
 There is possibility that a problem related to authority has occurred. Please try to delete browser cache. If you are using Google docs with more than two IDs at the same time, please use only one ID or utilize something like a secret browser which means there is no cache.
 
+ - Date on my gantt chart is not correct...
+
+There is a possibility that the timezone on your laptop differs from the timezone on your spreadsheet. Please check the setting and ensure the same timezone is used.
+[*How to check the timezone on your spreadsheet](https://support.google.com/docs/answer/58515?co=GENIE.Platform%3DDesktop&hl=en)
+
+
  - How do I extend the width of my gantt chart?
 
 You can change the width on the sidebar. However, it is not recommended that you extend the width too much because processing speed in spread sheets gets slow as the number of columns increases.
