@@ -613,7 +613,7 @@ function formatGantchart(span, date, chartWidth) {
 
   for (var i = 1, len = chartData[0].length; i < len; i++){
     if(i % 7 === 0){
-      calDate = calDate.add(span, 'days');
+      //calDate = calDate.add(span, 'days');
       //chartData[0][i] = calDate.format(format);
       chartData[0][i] = "="+baseCell+"+"+i; //use formula from the second date
     };
