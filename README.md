@@ -101,7 +101,9 @@ There is possibility that a problem related to authority has occurred. Please tr
  - Date on my gantt chart is not correct...
 
 There is a possibility that the timezone on your laptop differs from the timezone on your spreadsheet. Please check the setting and ensure the same timezone is used.
-[*How to check the timezone on your spreadsheet](https://support.google.com/docs/answer/58515?co=GENIE.Platform%3DDesktop&hl=en)
+[*How to check the timezone on your spreadsheet](https://support.google.com/docs/answer/58515?co=GENIE.Platform%3DDesktop&hl=en)  
+
+After version 30, as a workaround, you can manually change the first date in your gantt chart (*the following dates automatically change). Then, by using "Repaint Gantt Chart" and editing the holiday sheet, your gantt chart will be fixed.
 
 
  - How do I extend the width of my gantt chart?
