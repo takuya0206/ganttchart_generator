@@ -589,7 +589,7 @@ function formatGantchart(span, date, chartWidth) {
   var columnNum = schedule.getMaxColumns();
   var chartWidth = chartWidth;
 
-  //if refer to the save one if chartWidth is not specified
+  //Refer to the save one if chartWidth is not specified
   if(chartWidth){
     memo.setProperty('chartWidth', chartWidth);
   } else {
@@ -605,14 +605,17 @@ function formatGantchart(span, date, chartWidth) {
 
   //write date
   var calDate = date;
+  var baseCell = schedule.getRange(1, baseLine).getA1Notation();
   var chartRange = schedule.getRange(1, baseLine, 1, columnNum-baseLine+1);
   var chartData = chartRange.getValues();
   chartRange.setHorizontalAlignment('left');
   chartData[0][0] = calDate.format(format);
+
   for (var i = 1, len = chartData[0].length; i < len; i++){
     if(i % 7 === 0){
       calDate = calDate.add(span, 'days');
-      chartData[0][i] = calDate.format(format);
+      //chartData[0][i] = calDate.format(format);
+      chartData[0][i] = "="+baseCell+"+"+i; //use formula from the second date
     };
   };
   chartRange.setValues(chartData);

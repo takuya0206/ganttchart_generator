@@ -88,7 +88,9 @@
       </form>
     </div>
   </div>
-
+  <div class="container">
+    <p id="notice"></p>
+  </div>
 
 
   <hr width="95%">
@@ -97,7 +99,7 @@
   </div>
 
   <div class="sidebar bottom">
-    <span class="gray">Gantt Chart Generator by <a href="https://takuya0206.com/" target="">Takuya Tokiwa</a></span>
+    <span class="gray">Created by <a href="https://takuya0206.com/" target="">Takuya Tokiwa</a> (Version 22)</span>
   </div>
 
 
@@ -122,7 +124,7 @@
     var textConfirm = lang === 'ja' ? 'ガントチャートを初期化します。よろしいでしょうか？' : 'Please confirm. Your gantt chart will be initialized.'
     var textCbox_colorIndicator = lang === 'ja' ? '進捗別の色表記' : 'Show Color Indication';
     var textCbox_parentChart = lang === 'ja' ? '親タスクの自動反映' : 'Show Parents\' Charts';
-
+    //var textNotice = lang === 'ja' ? '※2018/5/6: Add-onをアップデートしました。5/6より以前に作成したスプレッドシートでは、ガントチャートの開始日を再設定する必要があります。恐れ入りますがよろしくお願いします。' : '*10th May 2018: Due to a bug the add-on has been updated again. In spreadsheets made before 6th May, please do "Change Start Date" to activate the new version.';
 
     var date = new Date();
 
@@ -138,6 +140,7 @@
     $('#Reset').text(textReset);
     $('#cbox_label_colorIndicator').text(textCbox_colorIndicator);
     $('#cbox_label_parentChart').text(textCbox_parentChart);
+    //$('#notice').text(textNotice);
 
     $('.action').each(function(){
       $(this).val(textButton);
