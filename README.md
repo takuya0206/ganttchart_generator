@@ -90,37 +90,37 @@ GNU General Public License (GPL)
 
 ## FAQ
 
- - The painting function does not work in my gantt chart..
+### The painting function does not work in my gantt chart..
 
 This add-on is sometimes updated without notification. In most of those cases, you can activate the new version by using "Change Start Date," If your gantt chart still does not work, you may have to create a new spreadsheet and use this add-on from scratch. Then, you transfer the date from the previous one by copy & paste.
 
- - I got a system error when using sidebar...
+### I got a system error when using sidebar...
 
 There is possibility that a problem related to authority has occurred. Please try to delete browser cache. If you are using Google docs with more than two IDs at the same time, please use only one ID or utilize something like a secret browser which means there is no cache.
 
- - Date on my gantt chart is not correct...
+### Date on my gantt chart is not correct...
 
 There is a possibility that the timezone on your laptop differs from the timezone on your spreadsheet. Please check the setting and ensure the same timezone is used.
 [*How to check the timezone on your spreadsheet](https://support.google.com/docs/answer/58515?co=GENIE.Platform%3DDesktop&hl=en)  
 
 After version 30, as a workaround, you can manually change the first date in your gantt chart (*the following dates automatically change). Then, by using "Repaint Gantt Chart" and editing the holiday sheet, your gantt chart will be fixed.
 
- - Date is not correct after a specific month
+### Date is not correct after a specific month...
 
 Daylight saving time may cause this kind of problem. As a workaround, you can solve this by adding balance values like "2019/04/01 1:00:00" as [this picture shown](https://github.com/takuya0206/ganttchart_generator/issues/4#issuecomment-465597251).
 
 
- - How do I extend the width of my gantt chart?
+### How do I extend the width of my gantt chart?
 
 You can change the width on the sidebar. However, it is not recommended that you extend the width too much because processing speed in spread sheets gets slow as the number of columns increases.
 
 
- - How do I change the color of charts?
+### How do I change the color of charts?
 
 The color of charts can not be changed as you like. In the current specification,  Show Color Indication is the function related to change of color, which shows blue means "completed" or "not yet start," yellow means "in progress," and red means "delayed".
 
 
- - Parents' progress always show zero...
+### Parents' progress always show zero...
 
 Parents' progress are calculated based on the weighted average of their child's workload, which means that parents’s progress always shows 0% unless you enter "planned workload." Note: "Actual workload" does not have to do with any program. This is just space to make a note which allows you to look back your project after it finished.
 
