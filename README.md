@@ -105,6 +105,10 @@ There is a possibility that the timezone on your laptop differs from the timezon
 
 After version 30, as a workaround, you can manually change the first date in your gantt chart (*the following dates automatically change). Then, by using "Repaint Gantt Chart" and editing the holiday sheet, your gantt chart will be fixed.
 
+ - Date is not correct after a specific month
+
+Daylight saving time may cause this kind of problem. As a workaround, you can solve this by adding balance values like "2019/04/01 1:00:00" as [this picture shown](https://github.com/takuya0206/ganttchart_generator/issues/4#issuecomment-465597251).
+
 
  - How do I extend the width of my gantt chart?
 
