@@ -12,9 +12,9 @@ This is an add-on for Google apps script. You can automatically create a gantt c
 
 ## Installation
 
-[Gantt Chart Generator - Google Sheets add-on](https://chrome.google.com/webstore/detail/gantt-chart-generator/bnaicalmdphddkedcgchnfbjohmhdgni?utm_source=permalink)
+[Gantt Chart Generator - Google Sheets add-on](https://gsuite.google.com/marketplace/app/gantt_chart_generator/1037080664457)
 
-Access the above URL, log in your Google account, and click "＋ Free."
+Access the above URL, log in your Google account, and click "Install."
 
 
 ## What You Can Do
