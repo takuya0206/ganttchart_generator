@@ -56,9 +56,10 @@ A column | Date | Make a holiday line in pink
 
 ### Sidebar
 
-Item           | Actio
+Item           | Action
 ------------ | --------------------------
 Change Start Date and Chart Width       | Change start date<br />Change chart width in week
+Slide the Date within the Selected Range | Slide the date within the cell <br/>  After the process, it repaints the Gantt chart <br/> (*)When multiple ranges are selected, only the last selected range will be processed<!--add by Nute16-->
 Recalculate Workload (plan) & Progress | Calculate all parents' worklaod and progress
 Repaint Gantt Chart | Repaint all of the Chart
 Show Color Indication      | Indicate progress like blue means "completed" or "not start," yellow means "in progress" and red means "delayed"
