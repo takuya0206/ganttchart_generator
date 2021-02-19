@@ -7,7 +7,7 @@ This is an add-on for Google apps script. You can automatically create a gantt c
 
 
 ## Note
-The add-on was updated on 20th Feb 2021, which included a certain of features only for premium users. Because of the premiumilty, the source code was not published and this repository was also not updated.  Since there is no plan to maintain, it is decided that this repository should be archived.
+The add-on was updated on 20th Feb 2021, which included a certain of features only for premium users. Because of the premiumilty, the source code was not published and this repository was also not updated.  Since there is no plan to maintain the old version of the source code, it is decided that this repository should be archived.
 
 
 ## Installation
